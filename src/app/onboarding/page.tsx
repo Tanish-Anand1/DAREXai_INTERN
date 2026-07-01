@@ -4,11 +4,7 @@ import { useSession } from "next-auth/react";
 import { useState } from "react";
 import { Zap, Building2, Users, ArrowRight, Check, Loader2 } from "lucide-react";
 
-function getCsrf() {
-  return decodeURIComponent(
-    document.cookie.split("; ").find((r) => r.startsWith("darex_csrf="))?.split("=")[1] ?? ""
-  );
-}
+import { getOrFetchCsrf } from "@/lib/client-api";
 
 export default function OnboardingPage() {
   const { data: session } = useSession();
@@ -22,9 +18,10 @@ export default function OnboardingPage() {
     setLoading(true);
     setError("");
     try {
+      const csrfToken = await getOrFetchCsrf();
       const res = await fetch("/api/onboarding", {
         method: "POST",
-        headers: { "content-type": "application/json", "x-csrf-token": getCsrf() },
+        headers: { "content-type": "application/json", "x-csrf-token": csrfToken },
         body: JSON.stringify({
           businessName: businessName || "My Business",
           firstContacts: contacts.filter((c) => c.name.trim()),

@@ -1,0 +1,3 @@
+Contact: mailto:hello@darexai.com
+Preferred-Languages: en
+Canonical: https://darexai.com/.well-known/security.txt

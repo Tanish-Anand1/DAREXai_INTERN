@@ -51,7 +51,6 @@ model Tenant {
   contacts       Contact[]
   opportunities  Opportunity[]
   conversations  ChatConversation[]
-  auditLogs      AuditLog[]
   tasks          Task[]
   refreshTokens  RefreshToken[]
   messages       Message[]
@@ -68,7 +67,6 @@ model User {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   conversations ChatConversation[]
-  auditLogs     AuditLog[]
   refreshTokens RefreshToken[]
 
   @@unique([tenantId, email])
@@ -143,19 +141,20 @@ model ChatMessage {
 }
 
 model AuditLog {
-  id        String   @id @default(cuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  action    String
-  target    String
-  metadata  Json?
-  ip        String?
-  createdAt DateTime @default(now())
+  id           String   @id @default(cuid())
+  userId       String
+  tenantId     String
+  action       String
+  resourceType String
+  resourceId   String?
+  metadata     Json     @default("{}")
+  ipAddress    String   @default("unknown")
+  userAgent    String   @default("unknown")
+  createdAt    DateTime @default(now())
 
+  @@index([userId])
   @@index([tenantId])
-  @@index([tenantId, action])
+  @@index([action])
 }
 
 model Task {

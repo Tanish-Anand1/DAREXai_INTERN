@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  BriefcaseBusiness, Plus, X, DollarSign, Sparkles, Loader2,
+  BriefcaseBusiness, Plus, X, DollarSign, Sparkles, Loader2, Target, Search
 } from "lucide-react";
 import { useUiStore } from "@/store/ui";
 
@@ -25,26 +25,13 @@ const STAGES = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
 const STAGE_COLORS: Record<string, string> = {
   new: "var(--info)",
   qualified: "var(--accent-primary)",
-  proposal: "var(--accent-secondary)",
+  proposal: "#8b5cf6",
   negotiation: "var(--warning)",
   won: "var(--success)",
   lost: "var(--danger)",
 };
 
-function getCsrf() {
-  return decodeURIComponent(
-    document.cookie.split("; ").find((r) => r.startsWith("darex_csrf="))?.split("=")[1] ?? ""
-  );
-}
-
-async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
-    ...init,
-    headers: { "content-type": "application/json", "x-csrf-token": getCsrf(), ...(init?.headers ?? {}) },
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
-}
+import { clientFetch } from "@/lib/client-api";
 
 export default function OpportunitiesPage() {
   const { data: session } = useSession();
@@ -58,18 +45,18 @@ export default function OpportunitiesPage() {
 
   const opportunities = useQuery({
     queryKey: ["opportunities"],
-    queryFn: () => api<{ opportunities: Opportunity[] }>("/api/crm/opportunities"),
+    queryFn: () => clientFetch<{ opportunities: Opportunity[] }>("/api/crm/opportunities"),
     enabled: Boolean(session?.user?.tenantId),
   });
 
   const contacts = useQuery({
     queryKey: ["contacts"],
-    queryFn: () => api<{ contacts: Array<{ id: string; name: string }> }>("/api/crm/contacts"),
+    queryFn: () => clientFetch<{ contacts: Array<{ id: string; name: string }> }>("/api/crm/contacts"),
     enabled: Boolean(session?.user?.tenantId),
   });
 
   const createOpp = useMutation({
-    mutationFn: () => api("/api/crm/opportunities", { method: "POST", body: JSON.stringify({ ...form, value: Number(form.value) }) }),
+    mutationFn: () => clientFetch("/api/crm/opportunities", { method: "POST", body: JSON.stringify({ ...form, value: Number(form.value) }) }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["opportunities"] });
       setModal(false);
@@ -81,7 +68,7 @@ export default function OpportunitiesPage() {
   async function fetchNba(id: string) {
     setNbaLoading(id);
     try {
-      const res = await api<{ nextBestAction: string }>(`/api/crm/opportunities/${id}/next-best-action`, {
+      const res = await clientFetch<{ nextBestAction: string }>(`/api/crm/opportunities/${id}/next-best-action`, {
         method: "POST",
         body: JSON.stringify({ regenerate: true }),
       });
@@ -98,9 +85,15 @@ export default function OpportunitiesPage() {
     setTimeout(() => setToast(""), 3000);
   }
 
-  // Group opportunities by stage for kanban view
+  const [searchQuery, setSearchQuery] = useState("");
+
   const grouped = STAGES.reduce<Record<string, Opportunity[]>>((acc, stage) => {
-    acc[stage] = (opportunities.data?.opportunities ?? []).filter((o) => o.stage === stage);
+    acc[stage] = (opportunities.data?.opportunities ?? []).filter((o) => {
+      if (o.stage !== stage) return false;
+      const q = searchQuery.toLowerCase();
+      return o.title.toLowerCase().includes(q) ||
+             (o.contact?.name ?? "").toLowerCase().includes(q);
+    });
     return acc;
   }, {});
 
@@ -118,46 +111,57 @@ export default function OpportunitiesPage() {
             Pipeline management with automated insights
           </p>
         </div>
-        <button className="btn btn-primary text-xs py-2 px-3" onClick={() => setModal(true)}>
+        <button className="btn btn-primary text-xs py-2 px-3 animate-pulse-glow" onClick={() => setModal(true)}>
           <Plus size={14} /> New Opportunity
         </button>
       </div>
 
-      {/* Pipeline Board with Column transitions */}
-      <div className="flex gap-4 overflow-x-auto pb-4 min-h-[460px]">
+      {/* Search */}
+      <div className="relative max-w-md">
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-tertiary" />
+        <input
+          className="field text-xs"
+          style={{ paddingLeft: "36px" }}
+          placeholder="Search opportunities by title or contact..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
+
+      {/* Pipeline Board */}
+      <div className="flex gap-4 overflow-x-auto pb-4 min-h-[460px] -mx-4 px-4 sm:-mx-6 sm:px-6">
         {STAGES.filter((s) => s !== "lost").map((stage, colIdx) => (
           <motion.div
             key={stage}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: colIdx * 0.05 }}
-            className="pipeline-column min-w-[240px]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.1 }}
+            className="flex flex-col gap-3 min-w-[270px] bg-secondary/30 border border-default p-4 rounded-xl shrink-0"
           >
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-2 pb-2 border-b border-default">
               <div className="flex items-center gap-2">
-                <div className="h-1.5 w-1.5 rounded-full" style={{ background: STAGE_COLORS[stage] }} />
-                <h3 className="text-[10px] font-bold uppercase tracking-wider text-secondary">
-                  {stage}
+                <div className="h-2 w-2 rounded-full" style={{ background: STAGE_COLORS[stage] }} />
+                <h3 className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                  {stage.toLowerCase()}
                 </h3>
               </div>
-              <span className="badge text-[10px] px-2 py-0.5">
+              <span className="badge text-[10px] font-semibold px-2 py-0.5">
                 {grouped[stage]?.length ?? 0}
               </span>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3 flex-1 overflow-y-auto pr-1">
               <AnimatePresence>
                 {grouped[stage]?.map((opp) => (
                   <motion.div
                     key={opp.id}
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -5 }}
-                    whileHover={{ y: -1 }}
-                    transition={{ duration: 0.1, ease: "easeOut" }}
-                    className="pipeline-card relative hover:bg-elevated transition-colors cursor-pointer"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.1 }}
+                    className="card relative hover:border-strong transition-colors cursor-pointer"
                     onClick={() => setSelectedOpportunityId(opp.id)}
-                    style={selectedOpportunityId === opp.id ? { borderColor: "var(--border-strong)" } : {}}
+                    style={selectedOpportunityId === opp.id ? { borderColor: "var(--text-primary)", borderWidth: "1.5px" } : {}}
                   >
                     <p className="text-xs font-semibold text-primary mb-1">{opp.title}</p>
                     <div className="flex items-center justify-between mt-2">
@@ -166,27 +170,16 @@ export default function OpportunitiesPage() {
                         {Number(opp.value).toLocaleString()}
                       </span>
                       {opp.contact && (
-                        <span className="text-[10px] text-tertiary">
+                        <span className="text-[9px] text-tertiary font-medium">
                           {opp.contact.name}
                         </span>
                       )}
                     </div>
                     
-                    <div className="flex items-center justify-between mt-3 pt-2" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-                      <Link
-                        href={`/dashboard/crm/opportunities/${opp.id}`}
-                        className="text-[9px] hover:underline"
-                        style={{ color: "var(--text-secondary)" }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        Details →
-                      </Link>
-                    </div>
-
                     {opp.qualificationScore != null && (
                       <div className="mt-2.5">
                         <div className="flex justify-between text-[9px] mb-1">
-                          <span className="text-tertiary">Score</span>
+                          <span className="text-tertiary flex items-center gap-0.5"><Target size={10} /> Qual Score</span>
                           <span className="font-semibold text-secondary">{opp.qualificationScore}%</span>
                         </div>
                         <div className="w-full h-1 bg-primary rounded overflow-hidden">
@@ -194,7 +187,7 @@ export default function OpportunitiesPage() {
                             className="h-full rounded transition-all"
                             style={{
                               width: `${opp.qualificationScore}%`,
-                              background: opp.qualificationScore > 80 ? "var(--success)" : "var(--text-secondary)",
+                              background: opp.qualificationScore > 80 ? "var(--success)" : "var(--accent-primary)",
                             }}
                           />
                         </div>
@@ -204,20 +197,30 @@ export default function OpportunitiesPage() {
                     {/* Next best action tool */}
                     <div className="mt-3">
                       {nbas[opp.id] ? (
-                        <p className="text-[10px] leading-relaxed text-secondary italic">
+                        <p className="text-[10px] leading-relaxed text-secondary italic bg-primary border border-subtle p-2 rounded-lg">
                           {nbas[opp.id].slice(0, 110)}...
                         </p>
                       ) : (
                         <button
                           className="btn btn-secondary w-full text-[9px]"
-                          style={{ padding: "4px 8px" }}
+                          style={{ padding: "4.5px 8px" }}
                           onClick={(e) => { e.stopPropagation(); fetchNba(opp.id); }}
                           disabled={nbaLoading === opp.id}
                         >
-                          {nbaLoading === opp.id ? <Loader2 size={10} className="animate-spin text-tertiary" /> : <Sparkles size={10} />}
+                          {nbaLoading === opp.id ? <Loader2 size={10} className="animate-spin text-tertiary" /> : <Sparkles size={10} className="text-primary" style={{ color: "var(--accent-primary)" }} />}
                           AI Next Best Action
                         </button>
                       )}
+                    </div>
+
+                    <div className="flex justify-end mt-2 pt-2 border-t border-subtle">
+                      <Link
+                        href={`/dashboard/crm/opportunities/${opp.id}`}
+                        className="text-[9px] text-secondary hover:text-primary transition-colors hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Opportunity Details →
+                      </Link>
                     </div>
                   </motion.div>
                 ))}
@@ -246,7 +249,7 @@ export default function OpportunitiesPage() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="modal-header">
-                <h3 className="modal-title">New Opportunity</h3>
+                <h3 className="modal-title font-bold gradient-text">New Opportunity</h3>
                 <button className="btn btn-ghost btn-icon" onClick={() => setModal(false)}><X size={16} /></button>
               </div>
               <form className="space-y-4 text-xs" onSubmit={(e) => { e.preventDefault(); createOpp.mutate(); }}>
@@ -275,7 +278,7 @@ export default function OpportunitiesPage() {
                 </div>
                 <div className="flex gap-3 justify-end pt-2">
                   <button type="button" className="btn btn-secondary text-xs" onClick={() => setModal(false)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary text-xs" disabled={!form.title.trim() || createOpp.isPending}>Create</button>
+                  <button type="submit" className="btn btn-primary text-xs" disabled={!form.title.trim() || createOpp.isPending}>Create Opportunity</button>
                 </div>
               </form>
             </motion.div>

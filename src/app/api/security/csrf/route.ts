@@ -9,7 +9,7 @@ export function GET() {
   res.cookies.set(cookieNames.csrf, token, {
     httpOnly: false,
     secure: env.NEXTAUTH_URL.startsWith("https://"),
-    sameSite: "strict",
+    sameSite: "lax",
     path: "/",
   });
   return res;

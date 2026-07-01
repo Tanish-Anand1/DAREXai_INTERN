@@ -101,8 +101,11 @@ async function ensureDemoData(tenantId: string, userId: string) {
       tenantId,
       userId,
       action: "demo.seed.ensure",
-      target: tenantId,
+      resourceType: "demo",
+      resourceId: tenantId,
       metadata: { contactCount, opportunityCount, messageCount },
+      ipAddress: "unknown",
+      userAgent: "unknown",
     },
   });
 }

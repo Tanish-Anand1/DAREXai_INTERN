@@ -4,21 +4,41 @@ type AuditInput = {
   tenantId: string;
   userId?: string;
   action: string;
-  target: string;
+  target?: string;
+  resourceType?: string;
+  resourceId?: string | null;
   metadata?: Record<string, unknown>;
   ip?: string;
+  ipAddress?: string;
+  userAgent?: string;
 };
 
 export async function auditLog(input: AuditInput) {
   const db = tenantScopedPrisma(input.tenantId);
+  
+  // Try to determine resourceType from action if not supplied.
+  // Example: "crm.contact.create" -> resourceType is "contact"
+  // "auth.login" -> resourceType is "auth"
+  let rType = input.resourceType;
+  if (!rType) {
+    const parts = input.action.split(".");
+    if (parts.length >= 2) {
+      rType = parts[parts.length - 2];
+    } else {
+      rType = "system";
+    }
+  }
+
   await db.auditLog.create({
     data: {
       tenantId: input.tenantId,
-      userId: input.userId,
+      userId: input.userId || "system",
       action: input.action,
-      target: input.target,
+      resourceType: rType,
+      resourceId: input.resourceId || input.target || null,
       metadata: input.metadata ?? {},
-      ip: input.ip,
+      ipAddress: input.ipAddress || input.ip || "unknown",
+      userAgent: input.userAgent || "unknown",
     },
   });
 }

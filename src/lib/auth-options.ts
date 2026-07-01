@@ -28,7 +28,13 @@ export const authOptions: NextAuthOptions = {
     signIn: "/login",
     error: "/login",
   },
-  session: { strategy: "jwt" },
+  cookies: {
+    sessionToken: {
+      name: '__Secure-next-auth.session-token',
+      options: { httpOnly: true, sameSite: 'lax', path: '/', secure: true },
+    },
+  },
+  session: { strategy: 'jwt', maxAge: 86400 },
   secret: env.NEXTAUTH_SECRET,
   callbacks: {
     async jwt({ token, profile }) {
@@ -61,8 +67,11 @@ export const authOptions: NextAuthOptions = {
             tenantId: existing.tenantId,
             userId: existing.id,
             action: "auth.signin",
-            target: "nextauth",
+            resourceType: "auth",
+            resourceId: "nextauth",
             metadata: {},
+            ipAddress: "unknown",
+            userAgent: "unknown",
           },
         });
       }

@@ -52,16 +52,10 @@ type OpportunityDetailResponse = {
   messages: Message[];
 };
 
-function getCsrf() {
-  return decodeURIComponent(
-    document.cookie.split("; ").find((r) => r.startsWith("darex_csrf="))?.split("=")[1] ?? ""
-  );
-}
+import { clientFetch, getOrFetchCsrf } from "@/lib/client-api";
 
 async function fetchOpportunityDetail(id: string): Promise<OpportunityDetailResponse> {
-  const res = await fetch(`/api/crm/opportunities/${id}`);
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+  return clientFetch(`/api/crm/opportunities/${id}`);
 }
 
 export default function OpportunityDetailPage({ params }: { params: { id: string } }) {
@@ -77,15 +71,16 @@ export default function OpportunityDetailPage({ params }: { params: { id: string
   });
 
   const updateStage = useMutation({
-    mutationFn: (newStage: string) =>
-      fetch(`/api/crm/opportunities/${params.id}`, {
+    mutationFn: async (newStage: string) => {
+      const csrfToken = await getOrFetchCsrf();
+      const res = await fetch(`/api/crm/opportunities/${params.id}`, {
         method: "PATCH",
-        headers: { "content-type": "application/json", "x-csrf-token": getCsrf() },
+        headers: { "content-type": "application/json", "x-csrf-token": csrfToken },
         body: JSON.stringify({ stage: newStage }),
-      }).then((res) => {
-        if (!res.ok) throw new Error("Failed to update stage");
-        return res.json();
-      }),
+      });
+      if (!res.ok) throw new Error("Failed to update stage");
+      return res.json();
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["opportunity-detail", params.id] });
       qc.invalidateQueries({ queryKey: ["opportunities"] });
@@ -96,9 +91,10 @@ export default function OpportunityDetailPage({ params }: { params: { id: string
   async function fetchNba() {
     setNbaLoading(true);
     try {
+      const csrfToken = await getOrFetchCsrf();
       const res = await fetch(`/api/crm/opportunities/${params.id}/next-best-action`, {
         method: "POST",
-        headers: { "content-type": "application/json", "x-csrf-token": getCsrf() },
+        headers: { "content-type": "application/json", "x-csrf-token": csrfToken },
         body: JSON.stringify({ regenerate: true }),
       });
       if (!res.ok) throw new Error(await res.text());

@@ -92,8 +92,11 @@ async function main() {
       tenantId: tenant.id,
       userId: user.id,
       action: "demo.seed",
-      target: tenant.id,
+      resourceType: "tenant",
+      resourceId: tenant.id,
       metadata: { email },
+      ipAddress: "unknown",
+      userAgent: "unknown",
     },
   });
 

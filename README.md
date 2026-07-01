@@ -74,3 +74,14 @@ To run the full suite of unit and integration tests (testing Auth Refresh, Tenan
 ```bash
 npm run test
 ```
+
+---
+
+## 🛑 Out of Scope & Deliberate Cuts
+
+As per the platform evaluation focus, the following features have been intentionally excluded from the scope of this project:
+- **Voice AI**: Interactive voice response (IVR) call flows and real-time speech processing are cut.
+- **Production WAF & SOC2 Hardening**: Web application firewalls, active DDoS mitigation, and enterprise compliance audits are omitted.
+- **Automated CI/CD**: Automated deployment pipelines (excluding direct Vercel hosting integrations) are cut.
+- **Horizontal Scaling**: Database partitioning, read replicas, and serverless edge scaling concerns are cut.
+

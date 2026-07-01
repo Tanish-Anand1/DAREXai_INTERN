@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { auditLog } from "@/lib/audit";
-import { businessContext, runAgentTool } from "@/lib/ai";
+import { businessContext, runAgentTool, generateLocalSmartResponse } from "@/lib/ai";
 import { withApi, json } from "@/lib/api";
 import { GoogleGenerativeAI, SchemaType, Tool } from "@google/generative-ai";
 import { env } from "@/lib/env";
@@ -100,6 +100,14 @@ const agentTools: Tool[] = [
   }
 ];
 
+async function streamText(text: string, controller: ReadableStreamDefaultController, encoder: TextEncoder) {
+  const chunks = text.match(/[\s\S]{1,6}/g) ?? [text];
+  for (const chunk of chunks) {
+    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ chunk })}\n\n`));
+    await new Promise((resolve) => setTimeout(resolve, 15));
+  }
+}
+
 export const POST = withApi(
   chatInput,
   async (_req, data, { auth, db }) => {
@@ -147,7 +155,7 @@ export const POST = withApi(
                 content: finalResponse,
               },
             });
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ chunk: finalResponse })}\n\n`));
+            await streamText(finalResponse, controller, encoder);
             controller.enqueue(encoder.encode("event: done\ndata: {}\n\n"));
             return;
           }
@@ -160,7 +168,7 @@ export const POST = withApi(
           });
 
           // Translate database logs into Gemini chat history format
-          const history = pastMessages.slice(0, -1).map((m) => ({
+          const history = pastMessages.slice(0, -1).map((m: any) => ({
             role: m.role === "user" ? "user" : "model",
             parts: [{ text: m.content }],
           }));
@@ -171,30 +179,57 @@ export const POST = withApi(
           const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
           
           // Loop through fallback models to handle deprecations
-          const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
-          let modelInstance: any = null;
+          let response: any = null;
           let chatSession: any = null;
 
-          for (const modelName of modelsToTry) {
+          for (const modelName of ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"]) {
             try {
-              modelInstance = genAI.getGenerativeModel({
+              const modelInstance = genAI.getGenerativeModel({
                 model: modelName,
                 tools: agentTools,
                 systemInstruction: `You are an AI business operations agent. You have access to backend tools. If you need to perform an action, search contacts, send a message, or fetch metrics, you MUST call the appropriate function tool. Do NOT output any text explanation or "Why" reasoning in the same turn that you trigger a function call. Only include your "Why: [reasoning]" explanation in your final text response after the tool result is returned. Context Facts: ${JSON.stringify(contextFacts)}`,
               });
               chatSession = modelInstance.startChat({ history });
-              break;
+              response = await chatSession.sendMessage(data.message);
+              break; // Success!
             } catch (e) {
-              console.warn(`Failed to initialize ${modelName}, trying next...`, e);
+              console.warn(`Failed to initialize or send message with ${modelName}, trying next...`, e);
             }
           }
 
-          if (!chatSession) {
-            throw new Error("Failed to initialize any Gemini model instance");
+          if (!response || !chatSession) {
+            console.warn("All Gemini models failed to respond. Falling back to local smart engine.");
+            finalResponse = generateLocalSmartResponse(data.message);
+            
+            // Persist Assistant Answer in DB
+            await db.chatMessage.create({
+              data: {
+                tenantId: auth.tenantId,
+                conversationId: conversation.id,
+                role: "assistant",
+                content: finalResponse,
+              },
+            });
+
+            await db.chatConversation.update({
+              where: { id: conversation.id },
+              data: { updatedAt: new Date() },
+            });
+
+            await auditLog({
+              tenantId: auth.tenantId,
+              userId: auth.userId,
+              action: "agent.response",
+              target: conversation.id,
+              metadata: { fallback: true },
+            });
+
+            // Stream final text response back to the client chunk-by-chunk
+            await streamText(finalResponse, controller, encoder);
+            controller.enqueue(encoder.encode("event: done\ndata: {}\n\n"));
+            return;
           }
 
-          // 5. Send Prompt & Handle Tool Calls
-          let response = await chatSession.sendMessage(data.message);
           let functionCalls = response.response.functionCalls;
 
           // If the model proposed a tool call
@@ -263,9 +298,7 @@ export const POST = withApi(
           });
 
           // Stream final text response back to the client chunk-by-chunk
-          for (const chunk of finalResponse.match(/[\s\S]{1,80}/g) ?? [finalResponse]) {
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ chunk })}\n\n`));
-          }
+          await streamText(finalResponse, controller, encoder);
           controller.enqueue(encoder.encode("event: done\ndata: {}\n\n"));
         } catch (error) {
           console.error("Agent stream failed", error);

@@ -1,0 +1,15 @@
+# Exclude large binaries
+*.exe
+postgresql-18.4-2-windows-x64.exe
+
+# Exclude local build output and cache
+.next
+node_modules
+.vercel
+scratch
+__tests__
+
+# Exclude log files
+*.log
+dev.out.log
+dev.err.log

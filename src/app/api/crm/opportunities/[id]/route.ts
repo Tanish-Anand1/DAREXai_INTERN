@@ -9,7 +9,7 @@ export const GET = withApi(z.object({}), async (req, _data, { auth, db }) => {
   if (!opportunity) return json({ error: "Not found" }, 404);
   
   const auditLogs = await db.auditLog.findMany({
-    where: { target: id },
+    where: { resourceId: id },
     orderBy: { createdAt: "desc" },
     take: 15,
   });

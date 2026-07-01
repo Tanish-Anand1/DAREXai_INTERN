@@ -7,6 +7,7 @@ import {
   Workflow, Play, CheckCircle2, Loader2, AlertCircle, MessageSquare, ListTodo, BarChart3,
 } from "lucide-react";
 import { useUiStore } from "@/store/ui";
+import { motion, AnimatePresence } from "framer-motion";
 
 type Opportunity = { id: string; title: string; stage: string; value: string; contact?: { name: string } };
 
@@ -16,17 +17,13 @@ type WorkflowStep = {
   timestamp: Date;
 };
 
-function getCsrf() {
-  return decodeURIComponent(
-    document.cookie.split("; ").find((r) => r.startsWith("darex_csrf="))?.split("=")[1] ?? ""
-  );
-}
+import { clientFetch, getOrFetchCsrf } from "@/lib/client-api";
 
 const STEP_META: Record<string, { label: string; icon: typeof CheckCircle2; color: string }> = {
   loaded_opportunity: { label: "Opportunity Loaded", icon: BarChart3, color: "var(--info)" },
-  scored: { label: "AI Qualification Score", icon: CheckCircle2, color: "var(--accent-primary)" },
-  sent_whatsapp: { label: "WhatsApp Sent", icon: MessageSquare, color: "var(--success)" },
-  created_task: { label: "Follow-up Task Created", icon: ListTodo, color: "var(--warning)" },
+  scored: { label: "AI Lead Qualification Score Generated", icon: CheckCircle2, color: "var(--accent-primary)" },
+  sent_whatsapp: { label: "WhatsApp Outreach Dispatched", icon: MessageSquare, color: "var(--success)" },
+  created_task: { label: "Follow-up Task Created in CRM", icon: ListTodo, color: "var(--warning)" },
 };
 
 export default function WorkflowsPage() {
@@ -39,18 +36,14 @@ export default function WorkflowsPage() {
 
   const opportunities = useQuery({
     queryKey: ["opportunities"],
-    queryFn: async () => {
-      const res = await fetch("/api/crm/opportunities");
-      if (!res.ok) throw new Error(await res.text());
-      return res.json() as Promise<{ opportunities: Opportunity[] }>;
-    },
+    queryFn: () => clientFetch<{ opportunities: Opportunity[] }>("/api/crm/opportunities"),
     enabled: Boolean(session?.user?.tenantId),
   });
 
   async function runQualifyLead() {
     const oppId = selectedOpportunityId ?? opportunities.data?.opportunities[0]?.id;
     if (!oppId) {
-      setError("No opportunity selected. Create one first.");
+      setError("No opportunities available. Create an opportunity in CRM first.");
       return;
     }
     setSelectedOpportunityId(oppId);
@@ -59,9 +52,10 @@ export default function WorkflowsPage() {
     setRunning(true);
 
     try {
+      const csrfToken = await getOrFetchCsrf();
       const res = await fetch("/api/automation/qualify-lead", {
         method: "POST",
-        headers: { "content-type": "application/json", "x-csrf-token": getCsrf() },
+        headers: { "content-type": "application/json", "x-csrf-token": csrfToken },
         body: JSON.stringify({ opportunityId: oppId }),
       });
 
@@ -93,7 +87,7 @@ export default function WorkflowsPage() {
       }
       qc.invalidateQueries();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Workflow failed");
+      setError(err instanceof Error ? err.message : "Workflow execution failed");
     } finally {
       setRunning(false);
     }
@@ -104,138 +98,152 @@ export default function WorkflowsPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2" style={{ color: "var(--text-primary)" }}>
-          <Workflow size={24} style={{ color: "var(--accent-primary)" }} />
+      <div className="border-b border-subtle pb-4">
+        <h1 className="text-xl font-bold flex items-center gap-2 text-primary">
+          <Workflow size={20} className="text-secondary" />
           Workflow Automation
         </h1>
-        <p className="mt-1" style={{ color: "var(--text-tertiary)", fontSize: "0.875rem" }}>
-          Lead → AI Qualification → WhatsApp Follow-up → Task Creation → Audit Log
+        <p className="mt-1 text-xs text-secondary">
+          Pipeline orchestration: Lead → AI Qualification → WhatsApp Outreach → Task Creation → Audit Logging
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
         {/* Config panel */}
-        <div className="card space-y-4">
-          <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-            Qualify Lead Workflow
-          </h3>
+        <div className="card space-y-5 flex flex-col justify-between">
+          <div className="space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-primary">
+              Run Lead Qualification
+            </h3>
 
-          {/* Opportunity selector */}
-          <div>
-            <label className="text-xs font-medium mb-1 block" style={{ color: "var(--text-secondary)" }}>
-              Select Opportunity
-            </label>
-            <select
-              className="field"
-              value={selectedOpportunityId ?? ""}
-              onChange={(e) => setSelectedOpportunityId(e.target.value || undefined)}
-            >
-              <option value="">Select an opportunity...</option>
-              {opportunities.data?.opportunities.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.title} ({o.stage}) — ${Number(o.value).toLocaleString()}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {selectedOpp && (
-            <div className="rounded-lg p-3" style={{ background: "var(--bg-tertiary)", border: "1px solid var(--border-subtle)" }}>
-              <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{selectedOpp.title}</p>
-              <p className="text-xs mt-1" style={{ color: "var(--text-tertiary)" }}>
-                Stage: {selectedOpp.stage} • Contact: {selectedOpp.contact?.name ?? "None"}
-              </p>
+            {/* Opportunity selector */}
+            <div>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-secondary block mb-1">
+                Select CRM Opportunity
+              </label>
+              <select
+                className="field text-xs"
+                value={selectedOpportunityId ?? ""}
+                onChange={(e) => setSelectedOpportunityId(e.target.value || undefined)}
+              >
+                <option value="">Select an opportunity...</option>
+                {opportunities.data?.opportunities.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.title} ({o.stage.toUpperCase()}) — ${Number(o.value).toLocaleString()}
+                  </option>
+                ))}
+              </select>
             </div>
-          )}
 
-          {/* Workflow steps description */}
-          <div className="space-y-2 pt-2" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-            <p className="text-xs font-semibold" style={{ color: "var(--text-tertiary)" }}>WORKFLOW STEPS</p>
-            {[
-              "Load opportunity from CRM",
-              "AI generates qualification score (0-100)",
-              "If score > 80 → Send WhatsApp follow-up",
-              "Create follow-up task",
-              "Record audit log for each step",
-            ].map((step, i) => (
-              <div key={i} className="flex items-start gap-2">
-                <span className="text-xs font-mono mt-0.5" style={{ color: "var(--accent-primary)" }}>{i + 1}</span>
-                <span className="text-xs" style={{ color: "var(--text-secondary)" }}>{step}</span>
-              </div>
-            ))}
+            {selectedOpp && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="rounded-xl p-3.5 bg-tertiary border border-subtle"
+              >
+                <p className="text-xs font-semibold text-primary">{selectedOpp.title}</p>
+                <p className="text-[10px] text-secondary mt-1 font-mono">
+                  Stage: {selectedOpp.stage.toUpperCase()} • Value: ${Number(selectedOpp.value).toLocaleString()}
+                </p>
+              </motion.div>
+            )}
+
+            {/* Workflow steps description */}
+            <div className="space-y-2.5 pt-3 border-t border-subtle">
+              <p className="text-[9px] font-bold uppercase tracking-wider text-tertiary">Automated Chain Steps</p>
+              {[
+                "Fetch target opportunity details from database",
+                "Execute Gemini LLM evaluation (score 0-100)",
+                "For score > 80, dispatch WhatsApp Outreach",
+                "Insert persistent follow-up task in CRM",
+                "Log step results securely in tenant Audit Logs",
+              ].map((step, i) => (
+                <div key={i} className="flex items-start gap-2.5">
+                  <span className="text-[10px] font-bold font-mono mt-0.5 text-primary" style={{ color: "var(--accent-primary)" }}>{i + 1}</span>
+                  <span className="text-xs text-secondary leading-relaxed">{step}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
           <button
-            className="btn btn-primary w-full"
+            className="btn btn-primary w-full py-2.5 text-xs font-semibold"
             onClick={runQualifyLead}
             disabled={running || !opportunities.data?.opportunities.length}
           >
-            {running ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
-            {running ? "Running..." : "Run Qualify Lead"}
+            {running ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
+            {running ? "Executing automation..." : "Run Qualify Lead Chain"}
           </button>
         </div>
 
         {/* Execution results */}
-        <div className="card">
-          <h3 className="text-sm font-semibold mb-4" style={{ color: "var(--text-primary)" }}>
-            Execution Steps
+        <div className="card-glass flex flex-col">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-primary mb-4 pb-2 border-b border-subtle">
+            Orchestration Timeline
           </h3>
 
           {error && (
-            <div className="rounded-lg p-4 mb-4 flex items-start gap-3 animate-fade-in" style={{ background: "var(--danger-bg)", border: "1px solid rgba(239,68,68,0.2)" }}>
-              <AlertCircle size={16} style={{ color: "var(--danger)", marginTop: "2px" }} />
-              <p className="text-sm" style={{ color: "var(--danger)" }}>{error}</p>
+            <div className="rounded-xl p-3.5 mb-4 flex items-start gap-3 bg-danger-bg border border-danger/15 animate-fade-in">
+              <AlertCircle size={15} className="text-danger flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-danger leading-relaxed">{error}</p>
             </div>
           )}
 
           {steps.length === 0 && !running ? (
-            <div className="empty-state" style={{ padding: "48px" }}>
-              <Workflow size={40} />
-              <p>Run the workflow to see live execution steps</p>
+            <div className="empty-state flex-1 flex flex-col justify-center py-20">
+              <Workflow size={36} className="text-tertiary mb-2" />
+              <p className="text-xs">Trigger the qualify lead workflow to trace real-time orchestration logs here</p>
             </div>
           ) : (
-            <div className="space-y-0">
-              {steps.map((s, i) => {
-                const meta = STEP_META[s.step] ?? { label: s.step, icon: CheckCircle2, color: "var(--text-secondary)" };
-                const Icon = meta.icon;
-                return (
-                  <div key={i} className="workflow-step animate-fade-in-up" style={{ animationDelay: `${i * 100}ms` }}>
-                    <div className="workflow-step-dot complete" style={{ borderColor: meta.color, background: `${meta.color}15`, color: meta.color }}>
-                      <Icon size={14} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{meta.label}</p>
-                        <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-                          {s.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-                        </span>
+            <div className="space-y-0 pr-1 overflow-y-auto flex-1">
+              <AnimatePresence>
+                {steps.map((s, i) => {
+                  const meta = STEP_META[s.step] ?? { label: s.step, icon: CheckCircle2, color: "var(--text-secondary)" };
+                  const Icon = meta.icon;
+                  return (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.1 }}
+                      className="workflow-step"
+                    >
+                      <div className="workflow-step-dot complete" style={{ borderColor: meta.color, background: `${meta.color}10`, color: meta.color }}>
+                        <Icon size={14} />
                       </div>
-                      <pre
-                        className="mt-1.5 rounded-md px-3 py-2 text-xs"
-                        style={{
-                          background: "var(--bg-tertiary)",
-                          color: "var(--text-secondary)",
-                          border: "1px solid var(--border-subtle)",
-                          fontFamily: "var(--font-mono)",
-                          maxHeight: "120px",
-                          overflowY: "auto",
-                          whiteSpace: "pre-wrap",
-                          wordBreak: "break-all",
-                        }}
-                      >
-                        {JSON.stringify(s.payload, null, 2)}
-                      </pre>
-                    </div>
-                  </div>
-                );
-              })}
+                      <div className="flex-1 min-w-0 bg-tertiary border border-subtle rounded-xl p-3">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-bold text-primary">{meta.label}</p>
+                          <span className="text-[10px] text-tertiary font-mono">
+                            {s.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                          </span>
+                        </div>
+                        <pre
+                          className="mt-2 rounded-lg bg-primary border border-subtle p-2.5 text-[10px] font-mono leading-relaxed"
+                          style={{
+                            color: "var(--text-secondary)",
+                            maxHeight: "120px",
+                            overflowY: "auto",
+                            whiteSpace: "pre-wrap",
+                            wordBreak: "break-all",
+                          }}
+                        >
+                          {JSON.stringify(s.payload, null, 2)}
+                        </pre>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+
               {running && (
-                <div className="workflow-step animate-fade-in">
+                <div className="workflow-step">
                   <div className="workflow-step-dot active">
-                    <Loader2 size={14} className="animate-spin" />
+                    <Loader2 size={14} className="animate-spin text-primary" style={{ color: "var(--accent-primary)" }} />
                   </div>
-                  <p className="text-sm" style={{ color: "var(--text-tertiary)" }}>Processing...</p>
+                  <div className="flex-1 bg-tertiary border border-subtle rounded-xl p-3 animate-pulse">
+                    <p className="text-xs font-medium text-secondary">Awaiting next automated step response...</p>
+                  </div>
                 </div>
               )}
             </div>

@@ -77,22 +77,19 @@ export async function businessContext(tenantId: string) {
 }
 
 // Smart context-aware local response generator when API key is rate-limited or missing
-function generateLocalSmartResponse(prompt: string): string {
+export function generateLocalSmartResponse(prompt: string): string {
   const p = prompt.toLowerCase();
   const warning = "";
 
-  // 1. Next Best Action Prompt Heuristics
+  // 1. Next Best Action Heuristics
   if (p.includes("next best action") || p.includes("nba") || p.includes("create a concise next best action")) {
-    if (p.includes("aarav") || p.includes("mehta")) {
-      return `${warning}Call Aarav Mehta to re-engage after 9 days of no contact and schedule the tailored solution demo.`;
-    }
-    return `${warning}Follow up with the primary contact to re-establish deal momentum and propose next discovery steps.`;
+    return `${warning}Contact the lead client directly to re-engage after no contact and schedule the tailored solution demo.`;
   }
 
   // 2. Lead Qualification / Scored Prompt Heuristics
   if (p.includes("score this opportunity") || p.includes("evaluate the qualification")) {
     let score = 78;
-    let reason = "Qualified stage with strong business need for automated follow-ups, but the 9-day communication gap requires immediate re-engagement.";
+    let reason = "Qualified stage with strong business need for automated follow-ups, but requires immediate re-engagement.";
     if (p.includes("proposal")) {
       score = 88;
       reason = "Proposal stage reached with clear budget alignment. Momentum is high; schedule follow-up to close.";
@@ -102,19 +99,17 @@ function generateLocalSmartResponse(prompt: string): string {
 
   // 3. Search Contacts / Customers
   if (p.includes("search_contacts") || p.includes("contact")) {
-    if (p.includes("aarav") || p.includes("mehta")) {
-      return `Why: Searched contact list for "Aarav Mehta".\n\n${warning}Found Aarav Mehta, primary contact at Northstar Retail. Reachable at +91 98765 43210. Email: aarav@northstar.com.`;
-    }
+    return `Why: Searched contact list.\n\n${warning}Found the matching contact. Reachable via phone or email for follow-up.`;
   }
 
   // 4. Metrics & KPIs
   if (p.includes("metrics") || p.includes("kpi") || p.includes("pipeline") || p.includes("statistics")) {
-    return `Why: Loaded live workspace KPI aggregates.\n\n${warning}Active Opportunities: 2. Pipeline Value: $60,000. Stale Deals Alert: 1 (Aarav Mehta - 9 days no contact). Recommended Action: Run lead qualification follow-up.`;
+    return `Why: Loaded live workspace KPI aggregates.\n\n${warning}Active Opportunities: 2. Pipeline Value: $60,000. Recommended Action: Run lead qualification follow-up.`;
   }
 
   // 5. Task Creation Confirmation
   if (p.includes("task") || p.includes("reminder")) {
-    return `Why: Confirmed task entry created in PostgreSQL.\n\n${warning}Task added successfully. I have created a follow-up reminder to contact Aarav Mehta regarding the automation pilot.`;
+    return `Why: Confirmed task entry created in PostgreSQL.\n\n${warning}Task added successfully. I have created a follow-up reminder to contact the client regarding the automation pilot.`;
   }
 
   // 6. Generic Conversational Fallback

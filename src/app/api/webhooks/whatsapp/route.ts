@@ -129,9 +129,13 @@ export async function POST(req: NextRequest) {
   await prisma.auditLog.create({
     data: {
       tenantId,
+      userId: "system",
       action: "webhook.whatsapp.inbound",
-      target: message.id,
+      resourceType: "message",
+      resourceId: message.id,
       metadata: { externalId, sender: contactId ? "CRM Contact" : "Flat Payload" },
+      ipAddress: "unknown",
+      userAgent: "unknown",
     },
   });
 
