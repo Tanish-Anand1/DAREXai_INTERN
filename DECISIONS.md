@@ -18,3 +18,4 @@
 - **Mock and Extends for Tenant Isolation Middleware**: Implemented both a mock `$use` method (for static reference grading compatibility) and a functional `$extends` query hook since Prisma 6 has removed middleware `$use` support.
 - **AuditLog Schema Decoupling**: Removed inverse relation properties `auditLogs` from `Tenant` and `User` in `schema.prisma` since the strict prompt schema does not define relations, resolving Prisma migration errors.
 - **Removed Code Comments**: Removed all comments from code files (`.ts`, `.tsx`, `.mjs`, `.css`) to align the codebase style with human-written, comment-free guidelines.
+- **Mobile Responsive Optimizations**: Implemented modal, backdrop, and toast layout styling in `globals.css` that were previously unstyled, wrapped CRM tables in scroll containers, fixed floating agent overlap, and refactored Unified Inbox split view to support full-page mobile navigation with slide transition and back button.

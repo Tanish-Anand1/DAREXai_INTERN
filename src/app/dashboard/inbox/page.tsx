@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useState } from "react";
 import {
   Inbox as InboxIcon, MessageSquare, Mail, Phone, ArrowDownLeft, ArrowUpRight,
-  Sparkles, Loader2,
+  Sparkles, Loader2, ArrowLeft,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getOrFetchCsrf } from "@/lib/client-api";
@@ -133,9 +133,12 @@ export default function InboxPage() {
       </div>
 
       {/* Split view */}
-      <div className="flex gap-4" style={{ height: "calc(100% - 130px)" }}>
+      <div className="flex flex-col md:flex-row gap-4" style={{ height: "calc(100% - 130px)" }}>
         {/* Message list */}
-        <div className="card flex-1 overflow-y-auto" style={{ padding: 0, maxWidth: "420px" }}>
+        <div 
+          className={`card flex-1 overflow-y-auto w-full md:max-w-[420px] ${selected ? "hidden md:block" : "block"}`} 
+          style={{ padding: 0 }}
+        >
           {inbox.isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 size={16} className="animate-spin text-primary" style={{ color: "var(--accent-primary)" }} />
@@ -207,7 +210,10 @@ export default function InboxPage() {
         </div>
 
         {/* Detail panel */}
-        <div className="card-glass flex-1 overflow-y-auto" style={{ minWidth: 0, padding: "20px" }}>
+        <div 
+          className={`card-glass flex-1 overflow-y-auto w-full ${selected ? "block" : "hidden md:block"}`} 
+          style={{ minWidth: 0, padding: "20px" }}
+        >
           <AnimatePresence mode="wait">
             {selected ? (
               <motion.div
@@ -220,14 +226,23 @@ export default function InboxPage() {
               >
                 {/* Header */}
                 <div className="flex items-start justify-between border-b border-subtle pb-4">
-                  <div>
-                    <h3 className="text-sm font-bold text-primary">
-                      {selected.contact?.name ?? "Unknown Sender"}
-                    </h3>
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={() => setSelected(null)}
+                      className="btn btn-secondary btn-icon md:hidden p-1 rounded"
+                      title="Back to list"
+                    >
+                      <ArrowLeft size={16} />
+                    </button>
+                    <div>
+                      <h3 className="text-sm font-bold text-primary">
+                        {selected.contact?.name ?? "Unknown Sender"}
+                      </h3>
                     {selected.contact?.company && (
                       <p className="text-xs text-tertiary mt-0.5">{selected.contact.company}</p>
                     )}
                   </div>
+                </div>
                   <div className="flex items-center gap-2">
                     <span
                       className="badge text-[10px] font-semibold"

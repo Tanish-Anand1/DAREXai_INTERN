@@ -112,93 +112,95 @@ export default function ContactsPage() {
 
       {}
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Contact Name</th>
-              <th>Email Address</th>
-              <th>Phone Number</th>
-              <th>Company</th>
-              <th style={{ width: "100px" }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {contacts.isLoading ? (
+        <div className="w-full overflow-x-auto">
+          <table className="data-table min-w-[700px]">
+            <thead>
               <tr>
-                <td colSpan={5} className="text-center py-12">
-                  <div className="flex items-center justify-center gap-2 text-xs text-secondary">
-                    <Loader2 size={14} className="animate-spin text-primary" style={{ color: "var(--accent-primary)" }} />
-                    Loading contacts...
-                  </div>
-                </td>
+                <th>Contact Name</th>
+                <th>Email Address</th>
+                <th>Phone Number</th>
+                <th>Company</th>
+                <th style={{ width: "100px" }}>Actions</th>
               </tr>
-            ) : contacts.data?.contacts.length ? (
-              contacts.data.contacts
-                .filter((c) => {
-                  const q = search.toLowerCase();
-                  return (c.name || "").toLowerCase().includes(q) ||
-                         (c.company || "").toLowerCase().includes(q) ||
-                         (c.email || "").toLowerCase().includes(q) ||
-                         (c.phone || "").toLowerCase().includes(q);
-                })
-                .map((c) => (
-                <tr key={c.id}>
-                  <td className="font-semibold text-primary">
-                    <div className="flex items-center gap-2.5">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-lg text-[10px] font-bold avatar-gradient">
-                        {(c.name ?? "").split(" ").map(n => n ? n[0] : "").join("").toUpperCase().slice(0, 2) || "C"}
-                      </div>
-                      <span>{c.name}</span>
-                    </div>
-                  </td>
-                  <td>
-                    {c.email ? (
-                      <span className="flex items-center gap-1.5 text-secondary">
-                        <Mail size={12} className="text-tertiary" /> {c.email}
-                      </span>
-                    ) : <span className="text-tertiary">—</span>}
-                  </td>
-                  <td>
-                    {c.phone ? (
-                      <span className="flex items-center gap-1.5 text-secondary">
-                        <Phone size={12} className="text-tertiary" /> {c.phone}
-                      </span>
-                    ) : <span className="text-tertiary">—</span>}
-                  </td>
-                  <td>
-                    {c.company ? (
-                      <span className="flex items-center gap-1.5 text-secondary">
-                        <Building2 size={12} className="text-tertiary" /> {c.company}
-                      </span>
-                    ) : <span className="text-tertiary">—</span>}
-                  </td>
-                  <td>
-                    <div className="flex gap-1">
-                      <button className="btn btn-ghost btn-icon" onClick={() => openEdit(c)} title="Edit">
-                        <Pencil size={13} />
-                      </button>
-                      <button
-                        className="btn btn-ghost btn-icon"
-                        style={{ color: "var(--danger)" }}
-                        onClick={() => { if (confirm("Are you sure you want to delete this contact?")) deleteContact.mutate(c.id); }}
-                        title="Delete"
-                      >
-                        <Trash2 size={13} />
-                      </button>
+            </thead>
+            <tbody>
+              {contacts.isLoading ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-12">
+                    <div className="flex items-center justify-center gap-2 text-xs text-secondary">
+                      <Loader2 size={14} className="animate-spin text-primary" style={{ color: "var(--accent-primary)" }} />
+                      Loading contacts...
                     </div>
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={5} className="empty-state py-12">
-                  <Users size={32} className="text-tertiary mb-1" />
-                  <p className="text-xs">No contacts found</p>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              ) : contacts.data?.contacts.length ? (
+                contacts.data.contacts
+                  .filter((c) => {
+                    const q = search.toLowerCase();
+                    return (c.name || "").toLowerCase().includes(q) ||
+                           (c.company || "").toLowerCase().includes(q) ||
+                           (c.email || "").toLowerCase().includes(q) ||
+                           (c.phone || "").toLowerCase().includes(q);
+                  })
+                  .map((c) => (
+                  <tr key={c.id}>
+                    <td className="font-semibold text-primary">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg text-[10px] font-bold avatar-gradient">
+                          {(c.name ?? "").split(" ").map(n => n ? n[0] : "").join("").toUpperCase().slice(0, 2) || "C"}
+                        </div>
+                        <span>{c.name}</span>
+                      </div>
+                    </td>
+                    <td>
+                      {c.email ? (
+                        <span className="flex items-center gap-1.5 text-secondary">
+                          <Mail size={12} className="text-tertiary" /> {c.email}
+                        </span>
+                      ) : <span className="text-tertiary">—</span>}
+                    </td>
+                    <td>
+                      {c.phone ? (
+                        <span className="flex items-center gap-1.5 text-secondary">
+                          <Phone size={12} className="text-tertiary" /> {c.phone}
+                        </span>
+                      ) : <span className="text-tertiary">—</span>}
+                    </td>
+                    <td>
+                      {c.company ? (
+                        <span className="flex items-center gap-1.5 text-secondary">
+                          <Building2 size={12} className="text-tertiary" /> {c.company}
+                        </span>
+                      ) : <span className="text-tertiary">—</span>}
+                    </td>
+                    <td>
+                      <div className="flex gap-1">
+                        <button className="btn btn-ghost btn-icon" onClick={() => openEdit(c)} title="Edit">
+                          <Pencil size={13} />
+                        </button>
+                        <button
+                          className="btn btn-ghost btn-icon"
+                          style={{ color: "var(--danger)" }}
+                          onClick={() => { if (confirm("Are you sure you want to delete this contact?")) deleteContact.mutate(c.id); }}
+                          title="Delete"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="empty-state py-12">
+                    <Users size={32} className="text-tertiary mb-1" />
+                    <p className="text-xs">No contacts found</p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {}

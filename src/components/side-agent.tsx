@@ -143,27 +143,33 @@ export function SideAgent() {
   return (
     <>
       {}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-5 right-5 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-primary text-white shadow-lg hover:scale-105 active:scale-95 transition-all select-none border border-default/20"
-        style={{ 
-          background: "var(--accent-gradient)",
-          boxShadow: "0 4px 16px rgba(0,0,0,0.12)"
-        }}
-        title="AI Assistant"
-      >
-        {isOpen ? <X size={18} /> : <Bot size={18} />}
-      </button>
+      <AnimatePresence>
+        {!isOpen && (
+          <motion.button
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            onClick={() => setIsOpen(true)}
+            className="fixed bottom-5 right-5 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-primary text-white shadow-lg hover:scale-105 active:scale-95 transition-all select-none border border-default/20"
+            style={{ 
+              background: "var(--accent-gradient)",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.12)"
+            }}
+            title="AI Assistant"
+          >
+            <Bot size={18} />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
-      {/* Slide-out Sidebar Agent Drawer */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed top-12 bottom-0 right-0 w-full sm:w-[360px] z-30 bg-secondary border-l border-default flex flex-col shadow-2xl"
+            initial={{ x: "100%", opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: "100%", opacity: 0 }}
+            transition={{ type: "tween", duration: 0.2 }}
+            className="fixed top-[53px] lg:top-0 bottom-0 right-0 w-full sm:w-[360px] z-30 bg-secondary border-l border-default flex flex-col shadow-2xl"
           >
             {/* Header */}
             <div className="p-4 border-b border-default flex items-center justify-between bg-tertiary">
