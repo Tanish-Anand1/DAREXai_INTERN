@@ -140,7 +140,7 @@ export const POST = withApi(
     console.log("[Onboarding Debug] Needs Onboarding?:", needsOnboarding);
     console.log("[Onboarding Debug] Redirect Decision:", needsOnboarding ? "Redirect to /onboarding" : "Redirect to /dashboard");
 
-    // Removed ensureDemoData to allow a real, empty workspace configuration from scratch
+    
 
     const access = await signAccessToken({ sub: user.id, tenantId: user.tenantId, email: user.email });
     const refresh = await createRefreshToken(user.id, user.tenantId);

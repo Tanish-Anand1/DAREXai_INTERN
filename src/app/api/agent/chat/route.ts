@@ -10,11 +10,11 @@ const chatInput = z.object({
   message: z.string().min(1).max(4000),
 });
 
-// GET: Load conversations list or specific conversation messages
+
 export const GET = withApi(
   z.object({ conversationId: z.string().optional() }),
   async (req, data, { auth, db }) => {
-    // If a specific conversation ID is provided, return its messages
+    
     if (data.conversationId) {
       const messages = await db.chatMessage.findMany({
         where: { conversationId: data.conversationId },
@@ -23,7 +23,7 @@ export const GET = withApi(
       return json({ messages });
     }
 
-    // Otherwise, return all conversations for the current user
+    
     const conversations = await db.chatConversation.findMany({
       where: { userId: auth.userId },
       orderBy: { updatedAt: "desc" },
@@ -34,7 +34,7 @@ export const GET = withApi(
   { csrf: false }
 );
 
-// Define tools schema for Gemini model configuration using SchemaType enums
+
 const agentTools: Tool[] = [
   {
     functionDeclarations: [
@@ -115,7 +115,7 @@ export const POST = withApi(
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          // 1. Fetch/Create Conversation
+          
           const conversation = data.conversationId
             ? await db.chatConversation.findFirst({ where: { id: data.conversationId } })
             : await db.chatConversation.create({
@@ -130,7 +130,7 @@ export const POST = withApi(
             throw new Error("Conversation not found");
           }
 
-          // 2. Append User Message
+          
           await db.chatMessage.create({
             data: {
               tenantId: auth.tenantId,
@@ -144,7 +144,7 @@ export const POST = withApi(
           let lastToolName: string | undefined;
           let lastToolPayload: any;
 
-          // 3. Fallback check when Gemini API key is missing
+          
           if (!env.GEMINI_API_KEY) {
             finalResponse = `Why: Operating in local fallback mode because GEMINI_API_KEY is not configured.\n\nProcessed message: "${data.message}"`;
             await db.chatMessage.create({
@@ -160,25 +160,25 @@ export const POST = withApi(
             return;
           }
 
-          // 4. Load Conversation History for model context
+          
           const pastMessages = await db.chatMessage.findMany({
             where: { conversationId: conversation.id },
             orderBy: { createdAt: "asc" },
             take: 20,
           });
 
-          // Translate database logs into Gemini chat history format
+          
           const history = pastMessages.slice(0, -1).map((m: any) => ({
             role: m.role === "user" ? "user" : "model",
             parts: [{ text: m.content }],
           }));
 
-          // Fetch CRM business facts context
+          
           const contextFacts = await businessContext(auth.tenantId);
 
           const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
           
-          // Loop through fallback models to handle deprecations
+          
           let response: any = null;
           let chatSession: any = null;
 
@@ -191,7 +191,7 @@ export const POST = withApi(
               });
               chatSession = modelInstance.startChat({ history });
               response = await chatSession.sendMessage(data.message);
-              break; // Success!
+              break; 
             } catch (e) {
               console.warn(`Failed to initialize or send message with ${modelName}, trying next...`, e);
             }
@@ -201,7 +201,7 @@ export const POST = withApi(
             console.warn("All Gemini models failed to respond. Falling back to local smart engine.");
             finalResponse = generateLocalSmartResponse(data.message);
             
-            // Persist Assistant Answer in DB
+            
             await db.chatMessage.create({
               data: {
                 tenantId: auth.tenantId,
@@ -224,7 +224,7 @@ export const POST = withApi(
               metadata: { fallback: true },
             });
 
-            // Stream final text response back to the client chunk-by-chunk
+            
             await streamText(finalResponse, controller, encoder);
             controller.enqueue(encoder.encode("event: done\ndata: {}\n\n"));
             return;
@@ -232,18 +232,18 @@ export const POST = withApi(
 
           let functionCalls = response.response.functionCalls;
 
-          // If the model proposed a tool call
+          
           if (functionCalls && functionCalls.length > 0) {
             const call = functionCalls[0];
             lastToolName = call.name;
             lastToolPayload = call.args;
 
-            // Stream progress back to the UI
+            
             controller.enqueue(
               encoder.encode(`event: tool\ndata: ${JSON.stringify({ name: call.name, args: call.args })}\n\n`)
             );
 
-            // Execute the backend tool locally using Prisma client
+            
             let toolResult: any;
             try {
               toolResult = await runAgentTool(auth.tenantId, auth.userId, call.name, call.args);
@@ -252,12 +252,12 @@ export const POST = withApi(
               toolResult = { error: err instanceof Error ? err.message : "Tool failed" };
             }
 
-            // Stream tool result back to UI
+            
             controller.enqueue(
               encoder.encode(`event: tool_result\ndata: ${JSON.stringify({ name: call.name, result: toolResult })}\n\n`)
             );
 
-            // Send tool result back to the model turn to get final natural answer
+            
             const followUp = await chatSession.sendMessage([
               {
                 functionResponse: {
@@ -272,7 +272,7 @@ export const POST = withApi(
             finalResponse = response.response.text();
           }
 
-          // 6. Persist Assistant Answer in DB
+          
           await db.chatMessage.create({
             data: {
               tenantId: auth.tenantId,
@@ -297,7 +297,7 @@ export const POST = withApi(
             metadata: { tool: lastToolName },
           });
 
-          // Stream final text response back to the client chunk-by-chunk
+          
           await streamText(finalResponse, controller, encoder);
           controller.enqueue(encoder.encode("event: done\ndata: {}\n\n"));
         } catch (error) {

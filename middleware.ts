@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Middleware handles two responsibilities:
-// 1. CORS headers for API routes
-// 2. Route protection — redirect unauthenticated users away from /dashboard
+
+
+
 
 const PUBLIC_PATHS = ["/login", "/api/auth", "/api/security", "/api/webhooks", "/api/mock"];
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // --- CORS for API routes ---
+  
   let response = NextResponse.next();
   if (pathname.startsWith("/api/")) {
     const origin = req.headers.get("origin");
@@ -25,9 +25,9 @@ export function middleware(req: NextRequest) {
     }
   }
 
-  // --- Route protection for dashboard routes ---
-  // Check for both NextAuth session token and our custom access token.
-  // NextAuth sets a cookie like `next-auth.session-token` (or `__Secure-next-auth.session-token` on HTTPS).
+  
+  
+  
   const hasNextAuthSession =
     req.cookies.has("next-auth.session-token") ||
     req.cookies.has("__Secure-next-auth.session-token");

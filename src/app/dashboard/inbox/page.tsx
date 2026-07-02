@@ -103,7 +103,7 @@ export default function InboxPage() {
 
   return (
     <div className="animate-fade-in space-y-6" style={{ height: "calc(100vh - 48px)" }}>
-      {/* Header */}
+      {}
       <div className="border-b border-subtle pb-4">
         <h1 className="text-xl font-bold flex items-center gap-2 text-primary">
           <InboxIcon size={20} className="text-secondary" />
@@ -245,12 +245,12 @@ export default function InboxPage() {
                   </div>
                 </div>
 
-                {/* Message body */}
+                {}
                 <div className="rounded-xl p-4 bg-tertiary border border-subtle">
                   <p className="text-xs leading-relaxed text-secondary whitespace-pre-wrap">{selected.body}</p>
                 </div>
 
-                {/* AI Analysis */}
+                {}
                 <div className="space-y-3.5 pt-2">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
                     <Sparkles size={13} className="text-primary" style={{ color: "var(--accent-primary)" }} />

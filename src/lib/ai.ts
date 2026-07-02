@@ -76,17 +76,17 @@ export async function businessContext(tenantId: string) {
   };
 }
 
-// Smart context-aware local response generator when API key is rate-limited or missing
+
 export function generateLocalSmartResponse(prompt: string): string {
   const p = prompt.toLowerCase();
   const warning = "";
 
-  // 1. Next Best Action Heuristics
+  
   if (p.includes("next best action") || p.includes("nba") || p.includes("create a concise next best action")) {
     return `${warning}Contact the lead client directly to re-engage after no contact and schedule the tailored solution demo.`;
   }
 
-  // 2. Lead Qualification / Scored Prompt Heuristics
+  
   if (p.includes("score this opportunity") || p.includes("evaluate the qualification")) {
     let score = 78;
     let reason = "Qualified stage with strong business need for automated follow-ups, but requires immediate re-engagement.";
@@ -97,27 +97,27 @@ export function generateLocalSmartResponse(prompt: string): string {
     return JSON.stringify({ score, reasoning: `${warning}${reason}` });
   }
 
-  // 3. Search Contacts / Customers
+  
   if (p.includes("search_contacts") || p.includes("contact")) {
     return `Why: Searched contact list.\n\n${warning}Found the matching contact. Reachable via phone or email for follow-up.`;
   }
 
-  // 4. Metrics & KPIs
+  
   if (p.includes("metrics") || p.includes("kpi") || p.includes("pipeline") || p.includes("statistics")) {
     return `Why: Loaded live workspace KPI aggregates.\n\n${warning}Active Opportunities: 2. Pipeline Value: $60,000. Recommended Action: Run lead qualification follow-up.`;
   }
 
-  // 5. Task Creation Confirmation
+  
   if (p.includes("task") || p.includes("reminder")) {
     return `Why: Confirmed task entry created in PostgreSQL.\n\n${warning}Task added successfully. I have created a follow-up reminder to contact the client regarding the automation pilot.`;
   }
 
-  // 6. Generic Conversational Fallback
+  
   return `Why: Based on your current CRM database status.\n\n${warning}I can help you search contacts, schedule reminders, send WhatsApp follow-ups, or check pipeline metrics. What would you like to do?`;
 }
 
 export async function generateText(prompt: string) {
-  // If no API key is set, use the smart local generator immediately
+  
   if (!env.GEMINI_API_KEY) {
     return generateLocalSmartResponse(prompt);
   }
@@ -136,7 +136,7 @@ export async function generateText(prompt: string) {
     }
   }
 
-  // Fallback to the smart local generator if all Gemini API models fail (e.g. Quota Exceeded)
+  
   return generateLocalSmartResponse(prompt);
 }
 

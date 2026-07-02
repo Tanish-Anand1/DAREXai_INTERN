@@ -39,7 +39,7 @@ export default function OnboardingPage() {
     <main className="login-bg flex min-h-screen items-center justify-center px-4">
       <section className="bg-secondary border border-default w-full max-w-md p-6 rounded-md animate-slide-up relative">
         
-        {/* Progress Timeline */}
+        {}
         <div className="flex items-center justify-center gap-3 mb-6">
           {["Business", "Contacts", "Done"].map((label, i) => (
             <div key={label} className="flex items-center gap-1.5">

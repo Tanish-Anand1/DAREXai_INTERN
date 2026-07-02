@@ -1,87 +1,82 @@
 # Darex AI Operations Platform
 
-A production-inspired, multi-tenant AI Business Operations Platform that acts as an intelligent business assistant. Powered by Next.js 14 App Router, TypeScript, Tailwind CSS, PostgreSQL, Prisma ORM, and Google's Gemini API.
+This is a multi-tenant business operations platform featuring a CRM, AI Agent, Unified Inbox, and Workflow Automation. It is built as a Next.js evaluation project.
+
+## Stack
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript
+- **Database**: PostgreSQL (Prisma ORM)
+- **Styling**: Tailwind CSS
+- **Authentication**: NextAuth.js
+- **AI**: Gemini API
 
 ---
 
-## 🏗 Architectural Architecture & Security Blueprint
+## Key Features & Security Model
 
-### 1. Dual-Gated Authentication & Tenant Isolation
-* **Authentication**: Leverages Google OAuth (PKCE) via NextAuth.js for the initial identity handshake. Post-authentication, the system exchanges the session at `/api/auth/exchange` to generate short-lived custom Access JWTs (15 minutes) and long-lived Refresh JWTs (7 days) stored in secure, `httpOnly`, `SameSite=strict` cookies.
-* **Token Rotation**: Implements automatic Refresh Token Rotation (RTR). Detection of an already used refresh token immediately revokes the entire token family, preventing token theft exploits.
-* **Tenant Isolation**: Centralized database isolation using Prisma Client Extensions (`src/lib/prisma.ts`). Every model with `tenantId` is automatically filtered by the tenant identifier pulled from the verified server session, preventing cross-tenant data leaks. Explicit queries targeting cross-tenant IDs are rejected automatically at the query level.
-* **Explicit CORS & Input Validation**: All backend API endpoints are explicitly protected with Zod validation schemas to prevent malformed parameter payloads. Cross-Origin Resource Sharing (CORS) is explicitly configured inside `middleware.ts` to restrict API requests to the verified host application origin, enforcing secure cross-origin boundaries.
+### 1. Authentication & Multi-Tenancy
+- Identity handshake is handled via Google OAuth (PKCE) in NextAuth.js.
+- Post-handshake, a custom token-exchange route (`/api/auth/exchange`) issues short-lived Access JWTs (15 minutes) and rotated Refresh JWTs (7 days) stored in `httpOnly` secure cookies.
+- All database queries are automatically scoped by `tenantId` via a custom Prisma `$extends` query hook (`src/lib/prisma.ts`). The tenant ID is always resolved server-side from the verified JWT session.
 
-### 2. Intelligent AI Agent & Server-Side Tool Calling
-* **Native Tool Integration**: Utilizes Gemini's native function calling interface. The agent dynamically decides when to query customer contacts, create tasks, update opportunity statuses, dispatch WhatsApp follow-ups, or fetch KPIs.
-* **Explainability**: Prompts enforce a strict "Why" reasoning output structure at the beginning of each assistant response, explaining the recommendations directly to the user.
-* **Stateful Conversations**: Chat logs and message histories are persisted to the database and loaded into a persistent conversations side menu.
+### 2. CRM & Automation
+- CRUD endpoints and UI tables for managing Contacts and Opportunities.
+- Workflow automation that handles scoring prompts and lead qualification.
+- Unified Inbox displaying seeded customer messages with sentiment and intent classification.
 
-### 3. Production-Ready WhatsApp webhook Integration
-* **Meta Cloud API Webhook**: Supports official nested Meta webhook payloads. On incoming messages, the webhook validates signatures and dynamically queries the contact list by phone number, automatically resolving the sender's `tenantId` and `contactId` dynamically.
-* **Sandbox Fallback**: Defaults to a mock sandbox endpoint for local testing when Meta developer credentials are not configured.
+### 3. AI Agent
+- An intelligent side-agent using Gemini native tool-calling (function calling) to trigger CRM CRUD operations, retrieve metrics, and interact with mock external channels.
+- Reasoning explainability: The agent prefixes its answers with a "Why" block explaining its reasoning.
 
----
-
-## 🎨 Minimalist UI Aesthetics
-
-The user interface follows a high-end, clean minimalist aesthetic inspired by tools like Linear and Vercel:
-* **Default Dark Mode**: Deep slate background, high-contrast text layout, and subtle borders.
-* **Focus on Functionality**: Removed unnecessary flashy elements to prioritize clean, readable layouts.
-* **Typography**: Custom fonts configured (Inter for interfaces, JetBrains Mono for payloads and metrics).
+### 4. WhatsApp Sandbox Integration
+- Flat and nested official-spec Meta Cloud API webhook parsing in `/api/webhooks/whatsapp`.
+- A fallback mock sandbox interface is provided at `/api/mock/whatsapp` for local testing.
 
 ---
 
-## 🚀 Local Setup Instructions
+## Local Development Setup
 
 ### Prerequisites
-* **Node.js**: v18+
-* **Docker**: Signed in and active for local PostgreSQL containerization.
+- Node.js (v18+)
+- Local PostgreSQL instance (or Docker)
 
-### Installation
-1. Clone the repository and install dependencies:
+### Setup Steps
+1. Install dependencies:
    ```bash
    pnpm install
    ```
-2. Copy and configure your environment variables:
+2. Set up environment variables:
    ```bash
    cp .env.example .env
    ```
    Add your `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GEMINI_API_KEY`.
-3. Start the PostgreSQL Docker container:
+3. Apply database migrations:
    ```bash
-   docker run --name pg-darexai -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=darexai -p 5433:5432 -d postgres:latest
+   npx prisma migrate dev
    ```
-4. Run Prisma database migrations:
-   ```bash
-   npx prisma migrate dev --name init
-   ```
-5. Seed the database:
+4. Seed the database with demo records:
    ```bash
    npx prisma db seed
    ```
-6. Launch the development server:
+5. Run the local dev server:
    ```bash
-   npm run dev
+   pnpm dev
    ```
-   Open [http://localhost:3000](http://localhost:3000) in your browser.
+   Access the app at `http://localhost:3000`.
 
 ---
 
-## 🧪 Testing
-
-To run the full suite of unit and integration tests (testing Auth Refresh, Tenant Isolation, AI Tools, and Component rendering):
+## Testing
+Run the test suite (Vitest):
 ```bash
-npm run test
+pnpm test
 ```
 
 ---
 
-## 🛑 Out of Scope & Deliberate Cuts
-
-As per the platform evaluation focus, the following features have been intentionally excluded from the scope of this project:
-- **Voice AI**: Interactive voice response (IVR) call flows and real-time speech processing are cut.
-- **Production WAF & SOC2 Hardening**: Web application firewalls, active DDoS mitigation, and enterprise compliance audits are omitted.
-- **Automated CI/CD**: Automated deployment pipelines (excluding direct Vercel hosting integrations) are cut.
-- **Horizontal Scaling**: Database partitioning, read replicas, and serverless edge scaling concerns are cut.
-
+## Out of Scope / Cuts
+The following features are intentionally out of scope for this evaluation project:
+- Production WAF, SOC2 compliance, or DDoS mitigation.
+- Automated CI/CD pipelines (excluding standard Vercel deployments).
+- Database read-replicas, partitioning, or serverless scaling.
+- Voice AI / phone call automation.

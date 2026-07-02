@@ -12,11 +12,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [isMobile, setIsMobile] = useState(false);
   const [cookieConsentOpen, setCookieConsentOpen] = useState(false);
 
-  // Fetch CSRF token on mount for subsequent API calls
+  
   useEffect(() => {
     fetch("/api/security/csrf").catch(() => undefined);
     
-    // Check cookie consent preferences
+    
     const accepted = localStorage.getItem("darex-cookies-accepted");
     if (!accepted) {
       setCookieConsentOpen(true);
@@ -42,7 +42,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <Sidebar />
       
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Mobile Header Bar with Hamburger */}
+        {}
         {isMobile && (
           <header 
             className="flex items-center justify-between px-4 py-3 bg-secondary border-b border-subtle z-20 sticky top-0"
@@ -80,7 +80,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
-      {/* Cookie Consent Banner */}
+      {}
       <AnimatePresence>
         {cookieConsentOpen && (
           <motion.div
@@ -117,7 +117,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         )}
       </AnimatePresence>
 
-      {/* Global Floating Side AI Agent */}
+      {}
       <SideAgent />
     </div>
   );

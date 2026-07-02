@@ -5,7 +5,7 @@ import { classifyMessage, generateText, sendWhatsapp } from "@/lib/ai";
 import { env } from "@/lib/env";
 
 function validSignature(raw: string, header: string | null) {
-  // If no app secret is set, we bypass signature verification in local development sandbox mode
+  
   if (!env.META_APP_SECRET) return true;
   if (!header?.startsWith("sha256=")) return false;
   const expected = `sha256=${createHmac("sha256", env.META_APP_SECRET).update(raw).digest("hex")}`;
@@ -40,26 +40,26 @@ export async function POST(req: NextRequest) {
   let body = "";
   let externalId = "";
 
-  // 1. Detect if it is the official Meta Cloud API nested structure
+  
   if (payload.object === "whatsapp_business_account" && payload.entry?.[0]?.changes?.[0]?.value) {
     const value = payload.entry[0].changes[0].value;
     const message = value.messages?.[0];
 
     if (!message) {
-      // Sometimes Meta sends status update webhooks (sent/delivered/read) which we can acknowledge with 200
+      
       return NextResponse.json({ ok: true, type: "status_update" });
     }
 
     body = message.text?.body || "";
     externalId = message.id || "";
-    const from = message.from; // e.g. "15550100001"
+    const from = message.from; 
 
     if (!body || !from) {
       return NextResponse.json({ error: "Missing message body or sender info" }, { status: 400 });
     }
 
-    // Resolve tenantId and contactId by looking up the phone number in the DB
-    // Format could be raw or prefixed; we do a flexible contains search
+    
+    
     const contact = await prisma.contact.findFirst({
       where: {
         OR: [
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (!contact) {
-      // In production, you might auto-create a contact under a default tenant or log it
+      
       console.warn(`[Webhook] Message received from unregistered number: ${from}`);
       return NextResponse.json({ error: "Sender phone number not found in CRM contacts" }, { status: 404 });
     }
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
     tenantId = contact.tenantId;
     contactId = contact.id;
   }
-  // 2. Fallback to flat payload format (used by our sandbox simulator)
+  
   else {
     const sender = payload.from || "";
     body = payload.message || payload.body || "";
@@ -109,10 +109,10 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Classify message sentiment, intent, and recommended action
+  
   const ai = await classifyMessage(body);
 
-  // Write to tenant-scoped database
+  
   const message = await prisma.message.create({
     data: {
       tenantId,
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Record audit log
+  
   await prisma.auditLog.create({
     data: {
       tenantId,
@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Automatically trigger outbound AI response back through the sandbox mock layer
+  
   if (contactId) {
     try {
       console.log(`[WhatsApp Outbound] Webhook received message from registered contact. Contact ID: ${contactId}`);

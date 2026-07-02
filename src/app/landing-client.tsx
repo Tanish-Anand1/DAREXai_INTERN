@@ -48,9 +48,9 @@ const fadeUp = {
 export function LandingPage() {
   return (
     <main className="landing-bg grid-pattern min-h-screen">
-      {/* ────────── HERO ────────── */}
+      {}
       <section className="relative flex flex-col items-center justify-center text-center px-6 pt-32 pb-20">
-        {/* Floating accent orbs */}
+        {}
         <div
           className="absolute top-20 left-1/4 w-72 h-72 rounded-full blur-3xl pointer-events-none"
           style={{ background: "radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)" }}

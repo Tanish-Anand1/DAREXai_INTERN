@@ -82,7 +82,7 @@ export default function ContactsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between flex-wrap gap-4 border-b border-subtle pb-4">
         <div>
           <h1 className="text-xl font-bold text-primary flex items-center gap-2">
@@ -98,7 +98,7 @@ export default function ContactsPage() {
         </button>
       </div>
 
-      {/* Search */}
+      {}
       <div className="relative max-w-md">
         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-tertiary" />
         <input
@@ -110,7 +110,7 @@ export default function ContactsPage() {
         />
       </div>
 
-      {/* Table Card */}
+      {}
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         <table className="data-table">
           <thead>
@@ -201,7 +201,7 @@ export default function ContactsPage() {
         </table>
       </div>
 
-      {/* Modal Dialog */}
+      {}
       <AnimatePresence>
         {modal && (
           <motion.div

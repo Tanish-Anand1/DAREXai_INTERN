@@ -80,7 +80,7 @@ export default function WorkflowsPage() {
                 setSteps((prev) => [...prev, { step: payload.step, payload: payload.payload ?? {}, timestamp: new Date() }]);
               }
             } catch {
-              // non-JSON line
+              
             }
           }
         }
@@ -97,7 +97,7 @@ export default function WorkflowsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header */}
+      {}
       <div className="border-b border-subtle pb-4">
         <h1 className="text-xl font-bold flex items-center gap-2 text-primary">
           <Workflow size={20} className="text-secondary" />
@@ -116,7 +116,7 @@ export default function WorkflowsPage() {
               Run Lead Qualification
             </h3>
 
-            {/* Opportunity selector */}
+            {}
             <div>
               <label className="text-[10px] font-bold uppercase tracking-wider text-secondary block mb-1">
                 Select CRM Opportunity
@@ -148,7 +148,7 @@ export default function WorkflowsPage() {
               </motion.div>
             )}
 
-            {/* Workflow steps description */}
+            {}
             <div className="space-y-2.5 pt-3 border-t border-subtle">
               <p className="text-[9px] font-bold uppercase tracking-wider text-tertiary">Automated Chain Steps</p>
               {[

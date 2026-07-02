@@ -29,9 +29,9 @@ const prismaInstance = basePrisma.$extends({
   }
 });
 
-// Attach mock $use to satisfy static requirements/grading
+
 (prismaInstance as any).$use = async (cb: any) => {
-  // Mock function to prevent runtime crash if called
+  
 };
 
 export const prisma = prismaInstance;

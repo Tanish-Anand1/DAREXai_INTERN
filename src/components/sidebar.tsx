@@ -50,7 +50,7 @@ export function Sidebar() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Auto close sidebar on path change in mobile view
+  
   useEffect(() => {
     if (isMobile) {
       setMobileSidebarOpen(false);
@@ -77,7 +77,7 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile Drawer Overlay Backdrop */}
+      {}
       <AnimatePresence>
         {isMobile && mobileSidebarOpen && (
           <motion.div
@@ -128,7 +128,7 @@ export function Sidebar() {
           )}
         </div>
 
-        {/* Navigation items */}
+        {}
         <nav className="flex-1 py-3 space-y-0.5 overflow-y-auto">
           {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
             const isActive =

@@ -16,9 +16,9 @@ type AuditInput = {
 export async function auditLog(input: AuditInput) {
   const db = tenantScopedPrisma(input.tenantId);
   
-  // Try to determine resourceType from action if not supplied.
-  // Example: "crm.contact.create" -> resourceType is "contact"
-  // "auth.login" -> resourceType is "auth"
+  
+  
+  
   let rType = input.resourceType;
   if (!rType) {
     const parts = input.action.split(".");

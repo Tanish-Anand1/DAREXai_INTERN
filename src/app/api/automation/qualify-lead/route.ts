@@ -21,7 +21,7 @@ export const POST = withApi(
              Reasoning: [Write a very short, punchy, 2-sentence summary of the strengths and one main risk, in a natural human manager tone. Do NOT use any asterisks (**), markdown, or bullet points.]`
           );
 
-          // Parse score and reasoning cleanly (supporting both JSON and raw text formats)
+          
           let score = 85;
           let reasoning = rawOutput;
           const trimmedOutput = rawOutput.trim();

@@ -12,7 +12,7 @@ function LoginContent() {
   const [exchanging, setExchanging] = useState(false);
   const searchParams = useSearchParams();
 
-  // Display NextAuth error from query params (e.g. ?error=OAuthCallback)
+  
   useEffect(() => {
     const authError = searchParams.get("error");
     if (authError) {
@@ -20,7 +20,7 @@ function LoginContent() {
     }
   }, [searchParams]);
 
-  // After NextAuth authenticates, exchange for our custom JWT tokens
+  
   useEffect(() => {
     if (status !== "authenticated") return;
 
@@ -73,9 +73,9 @@ function LoginContent() {
       transition={{ duration: 0.3 }}
       className="w-full max-w-sm relative"
     >
-      {/* Glassmorphism card */}
+      {}
       <div className="card-glass p-7 rounded-2xl" style={{ border: "1px solid rgba(139, 92, 246, 0.15)" }}>
-        {/* Logo & branding */}
+        {}
         <div className="mb-7 flex flex-col items-center text-center">
           <div
             className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl"
@@ -91,7 +91,7 @@ function LoginContent() {
           </p>
         </div>
 
-        {/* Feature chips */}
+        {}
         <div className="mb-7 flex flex-wrap justify-center gap-1.5">
           {[
             { icon: Bot, label: "AI Agent" },

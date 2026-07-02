@@ -50,7 +50,7 @@ async function fetchDashboard(): Promise<DashboardData> {
   if (!res.ok) throw new Error(await res.text());
   const data = await res.json();
 
-  // If opportunities are not returned, fetch them from crm opportunities endpoint
+  
   if (!data.opportunities) {
     const oppRes = await fetch("/api/crm/opportunities");
     if (oppRes.ok) {
@@ -73,7 +73,7 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
 
-  // Group opportunities by BizLink stages
+  
   const getOpportunitiesByStage = (stageName: string): Opportunity[] => {
     const list = dashboard.data?.opportunities ?? [];
     return list.filter((opp) => {
@@ -100,7 +100,7 @@ export default function DashboardPage() {
   const pipelineVal = dashboard.data?.pipelineValue ?? 0;
   const activeCount = dashboard.data?.activeOpportunities ?? 0;
 
-  // Render SVG Columns for "New Customers" Weekly Chart
+  
   const barChartData = [
     { day: "Mon", value: 4 },
     { day: "Tue", value: 8 },
@@ -111,7 +111,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Search Header Row (Matches Dribbble top navigation) */}
+      {}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-default">
         <div className="relative w-full md:w-96">
           <Search className="absolute left-3.5 top-3 h-4 w-4 text-secondary" />
@@ -148,10 +148,10 @@ export default function DashboardPage() {
       ) : (
         <div className="space-y-8">
           
-          {/* Top Info section (Exact recreation of Dribbble top header layout) */}
+          {}
           <div className="grid gap-6 lg:grid-cols-12">
             
-            {/* Left section: Weekly chart */}
+            {}
             <div className="lg:col-span-5 card flex flex-col justify-between">
               <div>
                 <span className="text-[11px] uppercase tracking-wider text-secondary font-semibold">New customers</span>
@@ -169,10 +169,10 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Middle section: Speedometer success rate */}
+            {}
             <div className="lg:col-span-3 card flex flex-col items-center justify-center text-center">
               <div className="relative w-28 h-28 flex items-center justify-center">
-                {/* Simulated circular progress */}
+                {}
                 <svg className="w-full h-full transform -rotate-90">
                   <circle
                     cx="56"
@@ -249,7 +249,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {/* Column 2: Negotiation */}
+                {}
                 <div className="flex-1 flex flex-col gap-4">
                   <div className="flex items-center justify-between py-2 border-b border-default">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-primary">Negotiation</span>
@@ -270,7 +270,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {/* Column 3: Offer Sent */}
+                {}
                 <div className="flex-1 flex flex-col gap-4">
                   <div className="flex items-center justify-between py-2 border-b border-default">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-primary">Offer Sent</span>
@@ -291,7 +291,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {/* Column 4: Deal Closed */}
+                {}
                 <div className="flex-1 flex flex-col gap-4">
                   <div className="flex items-center justify-between py-2 border-b border-default">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-primary">Deal Closed</span>

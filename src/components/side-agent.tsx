@@ -142,7 +142,7 @@ export function SideAgent() {
 
   return (
     <>
-      {/* Floating Toggle Button */}
+      {}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="fixed bottom-5 right-5 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-primary text-white shadow-lg hover:scale-105 active:scale-95 transition-all select-none border border-default/20"
@@ -223,7 +223,7 @@ export function SideAgent() {
               )}
             </div>
 
-            {/* Input Footer */}
+            {}
             <form
               onSubmit={(e) => { e.preventDefault(); sendMessage(); }}
               className="p-3 border-t border-default bg-tertiary flex gap-2"

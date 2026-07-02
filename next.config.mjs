@@ -10,7 +10,7 @@ const csp = [
   "form-action 'self' https://accounts.google.com",
 ].join("; ");
 
-/** @type {import('next').NextConfig} */
+
 const nextConfig = {
   async headers() {
     return [{

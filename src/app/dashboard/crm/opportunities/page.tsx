@@ -100,7 +100,7 @@ export default function OpportunitiesPage() {
   return (
     <div className="space-y-6">
       
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between flex-wrap gap-4 border-b border-subtle pb-4">
         <div>
           <h1 className="text-xl font-bold text-primary flex items-center gap-2">
@@ -116,7 +116,7 @@ export default function OpportunitiesPage() {
         </button>
       </div>
 
-      {/* Search */}
+      {}
       <div className="relative max-w-md">
         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-tertiary" />
         <input
@@ -128,7 +128,7 @@ export default function OpportunitiesPage() {
         />
       </div>
 
-      {/* Pipeline Board */}
+      {}
       <div className="flex gap-4 overflow-x-auto pb-4 min-h-[460px] -mx-4 px-4 sm:-mx-6 sm:px-6">
         {STAGES.filter((s) => s !== "lost").map((stage, colIdx) => (
           <motion.div

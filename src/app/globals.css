@@ -1,36 +1,32 @@
 @import "tailwindcss";
 
-/* ═══════════════════════════════════════════════
-   DAREX AI — BizLink Light Cream Aesthetic
-   Direct Dribbble Shot Reconstruction (Ronas IT)
-   Warm Cream · White Panels · Soft Gray Borders
-   ═══════════════════════════════════════════════ */
+
 
 :root {
-  /* Warm cream-beige background (exact matching Dribbble) */
+  
   --bg-primary: #f4f3ed;
-  --bg-secondary: #ffffff;      /* Pure white cards & sidebar */
-  --bg-tertiary: #fafaf9;       /* Soft warm white */
+  --bg-secondary: #ffffff;      
+  --bg-tertiary: #fafaf9;       
   --bg-elevated: #ffffff;
   --bg-surface: #fdfdfd;
 
-  /* Contrast highlighted cards (like the dark active cards) */
+  
   --bg-dark-highlight: #1b1c21;
   --border-dark-highlight: #282930;
 
-  /* Extremely light warm-tinted borders */
+  
   --border-subtle: #eae8e1;
   --border-default: #e4e2db;
   --border-strong: #d2cfc7;
   --border-accent: #1b1c21;
 
-  /* Deep charcoal/black typography for high legibility */
+  
   --text-primary: #1b1c21;
   --text-secondary: #65666a;
   --text-tertiary: #9b9ca1;
   --text-inverse: #ffffff;
 
-  /* Accent highlights */
+  
   --accent-primary: #1b1c21;
   --accent-secondary: #65666a;
   --accent-tertiary: #929297;
@@ -40,7 +36,7 @@
   --accent-glow: rgba(27, 28, 33, 0.03);
   --accent-glow-strong: rgba(27, 28, 33, 0.05);
 
-  /* Warm organic status shades */
+  
   --success: #10b981;
   --success-bg: rgba(16, 185, 129, 0.08);
   --warning: #f59e0b;
@@ -50,20 +46,20 @@
   --info: #3b82f6;
   --info-bg: rgba(59, 130, 246, 0.08);
 
-  /* Layout dimensions */
+  
   --sidebar-width: 250px;
   --sidebar-collapsed: 72px;
   --font-sans: "Segoe UI", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "San Francisco", system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  /* Ronas IT soft rounded corners */
+  
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 22px;
   --radius-full: 9999px;
 
-  /* Motion speeds */
+  
   --transition-fast: 150ms cubic-bezier(0.2, 0.8, 0.2, 1);
   --transition-base: 250ms cubic-bezier(0.2, 0.8, 0.2, 1);
   --transition-slow: 400ms cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -76,9 +72,7 @@
   --font-mono: var(--font-mono);
 }
 
-/* ═══════════════════════════════════════════════
-   BASE PRESETS
-   ═══════════════════════════════════════════════ */
+
 
 body {
   background: var(--bg-primary);
@@ -95,9 +89,7 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: var(--radius-full); }
 ::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
 
-/* ═══════════════════════════════════════════════
-   CRAFTED LIGHT CARDS (BizLink Dribbble Style)
-   ═══════════════════════════════════════════════ */
+
 
 .card {
   background: var(--bg-secondary);
@@ -116,7 +108,7 @@ body {
     0 8px 24px rgba(27, 28, 33, 0.06);
 }
 
-/* Highlighted dark active card panels */
+
 .card-dark-highlight {
   background: var(--bg-dark-highlight);
   border: 1px solid var(--border-dark-highlight);
@@ -159,9 +151,7 @@ body {
     0 8px 18px rgba(27, 28, 33, 0.05);
 }
 
-/* ═══════════════════════════════════════════════
-   BUTTONS — Flat design matching Dribbble
-   ═══════════════════════════════════════════════ */
+
 
 .btn {
   display: inline-flex;
@@ -210,9 +200,7 @@ body {
   color: var(--text-primary);
 }
 
-/* ═══════════════════════════════════════════════
-   INPUTS
-   ═══════════════════════════════════════════════ */
+
 
 .field {
   width: 100%;
@@ -230,9 +218,7 @@ body {
   box-shadow: 0 0 0 2px rgba(27, 28, 33, 0.05);
 }
 
-/* ═══════════════════════════════════════════════
-   SIDEBAR NAV — Pure White Panel, Clean Align
-   ═══════════════════════════════════════════════ */
+
 
 .sidebar {
   width: var(--sidebar-width);
@@ -277,9 +263,7 @@ body {
   background: var(--text-primary);
 }
 
-/* ═══════════════════════════════════════════════
-   TABLES
-   ═══════════════════════════════════════════════ */
+
 
 .data-table {
   width: 100%;
@@ -307,9 +291,7 @@ body {
   background: var(--bg-tertiary);
 }
 
-/* ═══════════════════════════════════════════════
-   BADGES
-   ═══════════════════════════════════════════════ */
+
 
 .badge {
   display: inline-flex;
@@ -328,9 +310,7 @@ body {
 .badge-danger { background: var(--danger-bg); color: var(--danger); border-color: rgba(239, 68, 68, 0.15); }
 .badge-info { background: var(--info-bg); color: var(--info); border-color: rgba(59, 130, 246, 0.15); }
 
-/* ═══════════════════════════════════════════════
-   CHAT BUBBLES
-   ═══════════════════════════════════════════════ */
+
 
 .chat-bubble {
   max-width: 80%;
@@ -352,9 +332,7 @@ body {
   border-bottom-left-radius: 4px;
 }
 
-/* ═══════════════════════════════════════════════
-   WORKFLOW STEPS
-   ═══════════════════════════════════════════════ */
+
 
 .workflow-step {
   display: flex;
@@ -391,9 +369,7 @@ body {
   color: var(--text-primary);
 }
 
-/* ═══════════════════════════════════════════════
-   CHECKBOXES & RESPONSIVE DETAILS
-   ═══════════════════════════════════════════════ */
+
 
 .custom-checkbox {
   width: 14px;

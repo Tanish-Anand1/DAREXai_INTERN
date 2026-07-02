@@ -5,8 +5,8 @@ import { env } from "@/lib/env";
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    // Only register Google provider if credentials are configured.
-    // This prevents NextAuth from crashing at startup when GOOGLE_CLIENT_ID is empty.
+    
+    
     ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
       ? [
           GoogleProvider({
