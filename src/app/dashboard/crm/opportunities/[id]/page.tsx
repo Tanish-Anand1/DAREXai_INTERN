@@ -132,6 +132,12 @@ export default function OpportunityDetailPage({ params }: { params: { id: string
         }),
       });
       if (!res.ok) throw new Error(await res.text());
+
+      const phone = opportunity.contact.phone || "";
+      const cleanPhone = phone.replace(/[^0-9]/g, "");
+      const encodedMsg = encodeURIComponent(`DAREXai: ${quickWhatsappText.trim()}`);
+      window.open(`https://wa.me/${cleanPhone}?text=${encodedMsg}`, "_blank");
+
       setQuickWhatsappText("");
       showToast("WhatsApp message successfully sent!");
       qc.invalidateQueries({ queryKey: ["opportunity-detail", params.id] });

@@ -113,6 +113,17 @@ export function SideAgent() {
               }
             } catch {}
           }
+          else if (cleanLine.startsWith("event: open_whatsapp_web")) {
+            try {
+              const idx = cleanLine.indexOf("data: ");
+              if (idx !== -1) {
+                const data = JSON.parse(cleanLine.slice(idx + 6));
+                const cleanPhone = data.phone.replace(/[^0-9]/g, "");
+                const encodedMsg = encodeURIComponent(data.body);
+                window.open(`https://wa.me/${cleanPhone}?text=${encodedMsg}`, "_blank");
+              }
+            } catch {}
+          }
           else if (cleanLine.startsWith("data: ")) {
             try {
               const payload = JSON.parse(cleanLine.slice(6));
@@ -169,10 +180,14 @@ export function SideAgent() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: "100%", opacity: 0 }}
             transition={{ type: "tween", duration: 0.2 }}
-            className="fixed top-[53px] lg:top-0 bottom-0 right-0 w-full sm:w-[360px] z-50 bg-secondary border-l border-default flex flex-col shadow-2xl"
+            style={{ background: "var(--bg-secondary)" }}
+            className="fixed top-[53px] lg:top-0 bottom-0 right-0 w-full sm:w-[360px] z-50 border-l border-default flex flex-col shadow-2xl"
           >
             {/* Header */}
-            <div className="p-4 border-b border-default flex items-center justify-between bg-tertiary">
+            <div 
+              style={{ background: "var(--bg-tertiary)" }}
+              className="p-4 border-b border-default flex items-center justify-between"
+            >
               <div className="flex items-center gap-2">
                 <Sparkles size={14} style={{ color: "var(--text-primary)" }} />
                 <span className="text-xs font-bold text-primary">Side Agent Console</span>

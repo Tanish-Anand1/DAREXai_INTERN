@@ -72,6 +72,29 @@
   --font-mono: var(--font-mono);
 }
 
+@utility bg-secondary {
+  background-color: var(--bg-secondary);
+}
+@utility bg-tertiary {
+  background-color: var(--bg-tertiary);
+}
+@utility border-default {
+  border-color: var(--border-default);
+}
+@utility border-subtle {
+  border-color: var(--border-subtle);
+}
+@utility text-primary {
+  color: var(--text-primary);
+}
+@utility text-secondary {
+  color: var(--text-secondary);
+}
+@utility text-tertiary {
+  color: var(--text-tertiary);
+}
+
+
 
 
 body {

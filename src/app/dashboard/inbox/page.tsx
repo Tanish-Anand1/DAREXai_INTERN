@@ -19,7 +19,7 @@ type InboxMessage = {
   intent: string;
   summary: string;
   recommendedAction: string;
-  contact?: { id: string; name: string; company?: string };
+  contact?: { id: string; name: string; company?: string; phone?: string | null };
   createdAt: string;
 };
 
@@ -77,6 +77,12 @@ export default function InboxPage() {
         }),
       });
       if (!res.ok) throw new Error(await res.text());
+
+      const phone = selected.contact.phone || "";
+      const cleanPhone = phone.replace(/[^0-9]/g, "");
+      const encodedMsg = encodeURIComponent(`DAREXai: ${replyText.trim()}`);
+      window.open(`https://wa.me/${cleanPhone}?text=${encodedMsg}`, "_blank");
+
       setReplyText("");
       setReplySuccess(true);
       inbox.refetch();
