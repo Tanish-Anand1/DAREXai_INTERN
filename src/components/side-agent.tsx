@@ -113,17 +113,6 @@ export function SideAgent() {
               }
             } catch {}
           }
-          else if (cleanLine.startsWith("event: open_whatsapp_web")) {
-            try {
-              const idx = cleanLine.indexOf("data: ");
-              if (idx !== -1) {
-                const data = JSON.parse(cleanLine.slice(idx + 6));
-                const cleanPhone = data.phone.replace(/[^0-9]/g, "");
-                const encodedMsg = encodeURIComponent(data.body);
-                window.open(`https://wa.me/${cleanPhone}?text=${encodedMsg}`, "_blank");
-              }
-            } catch {}
-          }
           else if (cleanLine.startsWith("data: ")) {
             try {
               const payload = JSON.parse(cleanLine.slice(6));

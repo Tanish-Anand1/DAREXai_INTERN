@@ -148,20 +148,7 @@ export const POST = withApi(
           if (!env.GEMINI_API_KEY) {
             finalResponse = await processLocalAgentRouting(auth.tenantId, auth.userId, data.message);
             
-            if (finalResponse.includes("Dispatched a WhatsApp message")) {
-              const contacts = await db.contact.findMany();
-              const matched = contacts.find(c => data.message.toLowerCase().includes(c.name.toLowerCase()));
-              if (matched?.phone) {
-                const matchQuote = data.message.match(/"([^"]+)"/) || data.message.match(/'([^']+)'/);
-                let body = matchQuote ? matchQuote[1] : `Hi ${matched.name}, following up regarding our services from DAREXai.`;
-                if (!body.startsWith("DAREXai:")) {
-                  body = `DAREXai: ${body}`;
-                }
-                controller.enqueue(
-                  encoder.encode(`event: open_whatsapp_web\ndata: ${JSON.stringify({ phone: matched.phone, body })}\n\n`)
-                );
-              }
-            }
+
 
             await db.chatMessage.create({
               data: {
@@ -217,20 +204,7 @@ export const POST = withApi(
             console.warn("All Gemini models failed to respond. Falling back to local smart engine.");
             finalResponse = await processLocalAgentRouting(auth.tenantId, auth.userId, data.message);
             
-            if (finalResponse.includes("Dispatched a WhatsApp message")) {
-              const contacts = await db.contact.findMany();
-              const matched = contacts.find(c => data.message.toLowerCase().includes(c.name.toLowerCase()));
-              if (matched?.phone) {
-                const matchQuote = data.message.match(/"([^"]+)"/) || data.message.match(/'([^']+)'/);
-                let body = matchQuote ? matchQuote[1] : `Hi ${matched.name}, following up regarding our services from DAREXai.`;
-                if (!body.startsWith("DAREXai:")) {
-                  body = `DAREXai: ${body}`;
-                }
-                controller.enqueue(
-                  encoder.encode(`event: open_whatsapp_web\ndata: ${JSON.stringify({ phone: matched.phone, body })}\n\n`)
-                );
-              }
-            }
+
 
             await db.chatMessage.create({
               data: {
@@ -282,15 +256,7 @@ export const POST = withApi(
               toolResult = { error: err instanceof Error ? err.message : "Tool failed" };
             }
 
-            if (call.name === "send_whatsapp" && !toolResult.error) {
-              const contact = await db.contact.findFirst({ where: { id: call.args.contactId } });
-              if (contact?.phone) {
-                const messageBody = call.args.body.startsWith("DAREXai:") ? call.args.body : `DAREXai: ${call.args.body}`;
-                controller.enqueue(
-                  encoder.encode(`event: open_whatsapp_web\ndata: ${JSON.stringify({ phone: contact.phone, body: messageBody })}\n\n`)
-                );
-              }
-            }
+
 
             controller.enqueue(
               encoder.encode(`event: tool_result\ndata: ${JSON.stringify({ name: call.name, result: toolResult })}\n\n`)

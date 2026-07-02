@@ -120,8 +120,8 @@ export default function DashboardPage() {
             placeholder="Search customer, deals..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="field w-full pl-10 pr-4 py-2 bg-secondary border border-default rounded-xl"
-            style={{ borderRadius: "10px" }}
+            className="field w-full pr-4 py-2 bg-secondary border border-default rounded-xl"
+            style={{ borderRadius: "10px", paddingLeft: "2.5rem" }}
           />
         </div>
 

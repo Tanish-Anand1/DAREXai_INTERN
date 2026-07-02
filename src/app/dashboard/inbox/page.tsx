@@ -77,12 +77,6 @@ export default function InboxPage() {
         }),
       });
       if (!res.ok) throw new Error(await res.text());
-
-      const phone = selected.contact.phone || "";
-      const cleanPhone = phone.replace(/[^0-9]/g, "");
-      const encodedMsg = encodeURIComponent(`DAREXai: ${replyText.trim()}`);
-      window.open(`https://wa.me/${cleanPhone}?text=${encodedMsg}`, "_blank");
-
       setReplyText("");
       setReplySuccess(true);
       inbox.refetch();
