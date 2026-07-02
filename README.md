@@ -74,9 +74,46 @@ pnpm test
 
 ---
 
+## Data Model & Schema Design Decisions
+
+To ensure optimal multi-tenant isolation, clear audit trails, and efficient AI querying, the database schema (built using PostgreSQL + Prisma) incorporates the following design decisions:
+
+### Core Entities
+
+1. **Tenant**
+   - The central anchor of the multi-tenant architecture. All user access, contacts, opportunities, conversations, messages, and tokens are hard-linked to a specific `Tenant` ID.
+   - Includes custom `onboardingJson` to persist tenant-specific business profile context (business goals, industry, target customer) used by the AI Agent.
+
+2. **User**
+   - Belongs to a single `Tenant`. Contains identity details resolved during OAuth login.
+   - Constrained by a unique index `@@unique([tenantId, email])` to enforce that user accounts are isolated per tenant boundary.
+
+3. **Contact & Opportunity**
+   - Represents the core CRM records.
+   - Opportunities are linked to Contacts (using a `SetNull` delete rule to prevent orphan opportunities if contacts are removed).
+   - Features `qualificationScore` and `nextBestAction` columns to store AI scoring and recommendations directly on the records.
+
+4. **ChatConversation & ChatMessage**
+   - Persists the AI Chatbot's session state.
+   - `ChatMessage` records include `toolName` and `toolPayload` metadata columns. This is a critical design decision allowing the UI to audit and render exactly what tools (e.g., `send_whatsapp`) the AI triggered during the conversation.
+
+5. **RefreshToken**
+   - Implements refresh token rotation security. Includes fields like `familyId`, `tokenHash`, `revokedAt`, and `replacedById` to track the token tree and detect reuse immediately.
+
+6. **AuditLog**
+   - Captures telemetry logs for security audit gates. Stores the action, userId, IP, user agent, and a JSON `metadata` payload detailing the exact state changes (e.g. lead qualification scoring outputs).
+
+7. **Message**
+   - Represents the Unified Inbox communication timeline.
+   - Incorporates `MessageType` (WhatsApp, Email, Call logs) and indexes (`@@index([tenantId, type])`) for high-performance timeline queries.
+   - Stores AI-generated `sentiment`, `intent`, and `summary` columns populated during ingestion.
+
+---
+
 ## Out of Scope / Cuts
 The following features are intentionally out of scope for this evaluation project:
 - Production WAF, SOC2 compliance, or DDoS mitigation.
 - Automated CI/CD pipelines (excluding standard Vercel deployments).
 - Database read-replicas, partitioning, or serverless scaling.
 - Voice AI / phone call automation.
+
