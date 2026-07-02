@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 type Contact = {
+  id: string;
   name: string;
   email: string | null;
   phone: string | null;
@@ -63,6 +64,8 @@ export default function OpportunityDetailPage({ params }: { params: { id: string
   const qc = useQueryClient();
   const [nbaLoading, setNbaLoading] = useState(false);
   const [toast, setToast] = useState("");
+  const [quickWhatsappText, setQuickWhatsappText] = useState("");
+  const [sendingWhatsapp, setSendingWhatsapp] = useState(false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["opportunity-detail", params.id],
@@ -110,6 +113,34 @@ export default function OpportunityDetailPage({ params }: { params: { id: string
   function showToast(msg: string) {
     setToast(msg);
     setTimeout(() => setToast(""), 3000);
+  }
+
+  async function handleSendQuickWhatsapp() {
+    if (!opportunity?.contact?.id || !quickWhatsappText.trim()) return;
+    setSendingWhatsapp(true);
+    try {
+      const csrfToken = await getOrFetchCsrf();
+      const res = await fetch("/api/inbox/reply", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-csrf-token": csrfToken,
+        },
+        body: JSON.stringify({
+          contactId: opportunity.contact.id,
+          body: quickWhatsappText.trim(),
+        }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setQuickWhatsappText("");
+      showToast("WhatsApp message successfully sent!");
+      qc.invalidateQueries({ queryKey: ["opportunity-detail", params.id] });
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to send WhatsApp message");
+    } finally {
+      setSendingWhatsapp(false);
+    }
   }
 
   if (isLoading) {
@@ -196,9 +227,35 @@ export default function OpportunityDetailPage({ params }: { params: { id: string
                     </p>
                   )}
                   {opportunity.contact.phone && (
-                    <p className="text-xs text-secondary flex items-center gap-1.5">
-                      <Phone size={12} className="text-tertiary" /> {opportunity.contact.phone}
-                    </p>
+                    <>
+                      <p className="text-xs text-secondary flex items-center gap-1.5">
+                        <Phone size={12} className="text-tertiary" /> {opportunity.contact.phone}
+                      </p>
+                      <div className="mt-3.5 pt-3 border-t border-subtle space-y-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-secondary block">
+                          Quick Send WhatsApp
+                        </span>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            className="field flex-1 text-xs"
+                            placeholder="Type WhatsApp message..."
+                            value={quickWhatsappText}
+                            onChange={(e) => setQuickWhatsappText(e.target.value)}
+                            disabled={sendingWhatsapp}
+                            style={{ borderRadius: "8px" }}
+                          />
+                          <button
+                            onClick={handleSendQuickWhatsapp}
+                            disabled={sendingWhatsapp || !quickWhatsappText.trim()}
+                            className="btn btn-primary text-xs py-1.5 px-3 flex items-center justify-center"
+                            style={{ borderRadius: "8px" }}
+                          >
+                            {sendingWhatsapp ? <Loader2 size={12} className="animate-spin" /> : "Send"}
+                          </button>
+                        </div>
+                      </div>
+                    </>
                   )}
                 </div>
               ) : (

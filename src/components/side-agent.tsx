@@ -169,7 +169,7 @@ export function SideAgent() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: "100%", opacity: 0 }}
             transition={{ type: "tween", duration: 0.2 }}
-            className="fixed top-[53px] lg:top-0 bottom-0 right-0 w-full sm:w-[360px] z-30 bg-secondary border-l border-default flex flex-col shadow-2xl"
+            className="fixed top-[53px] lg:top-0 bottom-0 right-0 w-full sm:w-[360px] z-50 bg-secondary border-l border-default flex flex-col shadow-2xl"
           >
             {/* Header */}
             <div className="p-4 border-b border-default flex items-center justify-between bg-tertiary">

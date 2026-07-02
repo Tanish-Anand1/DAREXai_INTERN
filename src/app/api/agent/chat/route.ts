@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { auditLog } from "@/lib/audit";
-import { businessContext, runAgentTool, generateLocalSmartResponse } from "@/lib/ai";
+import { businessContext, runAgentTool, generateLocalSmartResponse, processLocalAgentRouting } from "@/lib/ai";
 import { withApi, json } from "@/lib/api";
 import { GoogleGenerativeAI, SchemaType, Tool } from "@google/generative-ai";
 import { env } from "@/lib/env";
@@ -146,7 +146,7 @@ export const POST = withApi(
 
           
           if (!env.GEMINI_API_KEY) {
-            finalResponse = `Why: Operating in local fallback mode because GEMINI_API_KEY is not configured.\n\nProcessed message: "${data.message}"`;
+            finalResponse = await processLocalAgentRouting(auth.tenantId, auth.userId, data.message);
             await db.chatMessage.create({
               data: {
                 tenantId: auth.tenantId,
@@ -199,7 +199,7 @@ export const POST = withApi(
 
           if (!response || !chatSession) {
             console.warn("All Gemini models failed to respond. Falling back to local smart engine.");
-            finalResponse = generateLocalSmartResponse(data.message);
+            finalResponse = await processLocalAgentRouting(auth.tenantId, auth.userId, data.message);
             
             
             await db.chatMessage.create({

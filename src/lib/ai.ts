@@ -63,16 +63,18 @@ Do NOT include any markdown, markdown block formatting, or other text outside th
 
 export async function businessContext(tenantId: string) {
   const db = tenantScopedPrisma(tenantId);
-  const [tenant, contacts, opportunities] = await Promise.all([
+  const [tenant, contacts, opportunities, tasks] = await Promise.all([
     db.tenant.findFirst({ where: { id: tenantId } }),
-    db.contact.findMany({ take: 5, orderBy: { updatedAt: "desc" } }),
-    db.opportunity.findMany({ take: 5, orderBy: { updatedAt: "desc" } }),
+    db.contact.findMany({ orderBy: { name: "asc" } }),
+    db.opportunity.findMany({ orderBy: { updatedAt: "desc" } }),
+    db.task.findMany({ where: { status: "pending" }, orderBy: { dueAt: "asc" } }),
   ]);
   return {
     businessName: tenant?.businessName ?? "Business",
     onboarding: tenant?.onboardingJson ?? {},
-    recentContacts: contacts.map((c) => ({ id: c.id, name: c.name, company: c.company })),
-    recentOpportunities: opportunities.map((o) => ({ id: o.id, title: o.title, stage: o.stage, value: Number(o.value) })),
+    contacts: contacts.map((c) => ({ id: c.id, name: c.name, email: c.email, phone: c.phone, company: c.company })),
+    opportunities: opportunities.map((o) => ({ id: o.id, contactId: o.contactId, title: o.title, stage: o.stage, value: Number(o.value) })),
+    tasks: tasks.map((t) => ({ id: t.id, title: t.title, status: t.status, opportunityId: t.opportunityId, dueAt: t.dueAt })),
   };
 }
 
@@ -148,6 +150,11 @@ export async function sendWhatsapp(tenantId: string, userId: string, input: z.in
     throw new Error("Contact has no phone number");
   }
 
+  let messageBody = parsed.body;
+  if (!messageBody.startsWith("DAREXai:")) {
+    messageBody = `DAREXai: ${messageBody}`;
+  }
+
   const endpoint = env.USE_SANDBOX === "true" ? env.WHATSAPP_SANDBOX_URL : `https://graph.facebook.com/v20.0/${env.META_PHONE_NUMBER_ID}/messages`;
   const headers: HeadersInit = { "content-type": "application/json" };
   if (env.USE_SANDBOX !== "true") {
@@ -155,7 +162,7 @@ export async function sendWhatsapp(tenantId: string, userId: string, input: z.in
   }
 
   const payload = env.USE_SANDBOX === "true"
-    ? { to: contact.phone, body: parsed.body }
+    ? { to: contact.phone, body: messageBody }
     : {
         messaging_product: "whatsapp",
         recipient_type: "individual",
@@ -163,7 +170,7 @@ export async function sendWhatsapp(tenantId: string, userId: string, input: z.in
         type: "text",
         text: {
           preview_url: false,
-          body: parsed.body,
+          body: messageBody,
         },
       };
 
@@ -182,10 +189,10 @@ export async function sendWhatsapp(tenantId: string, userId: string, input: z.in
       contactId: contact.id,
       type: "whatsapp",
       direction: "outbound",
-      body: parsed.body,
+      body: messageBody,
       sentiment: "neutral",
       intent: "followup",
-      summary: parsed.body.slice(0, 160),
+      summary: messageBody.slice(0, 160),
       recommendedAction: "Wait for customer response",
     },
   });
@@ -235,4 +242,101 @@ export async function runAgentTool(tenantId: string, userId: string, name: strin
     return metrics;
   }
   throw new Error(`Unknown tool: ${name}`);
+}
+
+export async function processLocalAgentRouting(tenantId: string, userId: string, message: string) {
+  const db = tenantScopedPrisma(tenantId);
+  const msgLower = message.toLowerCase();
+  
+  const contacts = await db.contact.findMany();
+  let matchedContact = null;
+  for (const c of contacts) {
+    if (msgLower.includes(c.name.toLowerCase())) {
+      matchedContact = c;
+      break;
+    }
+  }
+  
+  if (msgLower.includes("whatsapp") || msgLower.includes("message") || msgLower.includes("send")) {
+    if (matchedContact) {
+      let body = "Hi, let's connect regarding your automation needs.";
+      const matchQuote = message.match(/"([^"]+)"/) || message.match(/'([^']+)'/);
+      if (matchQuote) {
+        body = matchQuote[1];
+      } else {
+        body = `Hi ${matchedContact.name}, following up regarding our services from DAREXai.`;
+      }
+      
+      const res = await sendWhatsapp(tenantId, userId, { contactId: matchedContact.id, body });
+      const opp = await db.opportunity.findFirst({ where: { contactId: matchedContact.id } });
+      const task = await db.task.create({
+        data: {
+          tenantId,
+          title: `Follow up with ${matchedContact.name} regarding WhatsApp message`,
+          opportunityId: opp?.id,
+          status: "pending",
+          dueAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+        }
+      });
+      await auditLog({ tenantId, userId, action: "tool.create_task", target: task.id, metadata: { title: task.title } });
+      
+      return `Why: Identified request to send WhatsApp to "${matchedContact.name}" and create follow-up task.\n\nI have successfully executed the following operations:\n1. Located contact **${matchedContact.name}** in the CRM.\n2. Dispatched a WhatsApp message: *"${body}"* (sent in the name of **DAREXai**).\n3. Created a follow-up task: *"${task.title}"* due tomorrow.`;
+    }
+  }
+  
+  if (msgLower.includes("task") || msgLower.includes("reminder") || msgLower.includes("todo") || msgLower.includes("follow up")) {
+    const opp = matchedContact ? await db.opportunity.findFirst({ where: { contactId: matchedContact.id } }) : null;
+    const title = matchedContact 
+      ? `Follow up with ${matchedContact.name}` 
+      : (message.match(/"([^"]+)"/)?.[1] || "Follow up task");
+      
+    const task = await db.task.create({
+      data: {
+        tenantId,
+        title,
+        opportunityId: opp?.id,
+        status: "pending",
+        dueAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+      }
+    });
+    await auditLog({ tenantId, userId, action: "tool.create_task", target: task.id, metadata: { title } });
+    
+    return `Why: Identified request to create a follow-up reminder.\n\nI have created a task: **"${title}"** in the database, scheduled for tomorrow.`;
+  }
+  
+  if (msgLower.includes("search") || msgLower.includes("find") || msgLower.includes("lookup")) {
+    const query = message.replace(/(search|find|lookup|contacts?|leads?)/gi, "").trim();
+    if (query) {
+      const results = await db.contact.findMany({
+        where: {
+          OR: [
+            { name: { contains: query, mode: "insensitive" } },
+            { company: { contains: query, mode: "insensitive" } }
+          ]
+        },
+        take: 5
+      });
+      await auditLog({ tenantId, userId, action: "tool.search_contacts", target: "Contact", metadata: { query } });
+      if (results.length > 0) {
+        return `Why: Searched the CRM database for "${query}".\n\nFound matching contacts:\n${results.map(c => `- **${c.name}** (${c.company || "No company"}) - Phone: ${c.phone || "N/A"}`).join("\n")}`;
+      } else {
+        return `Why: Searched the CRM database for "${query}".\n\nNo matching contacts were found.`;
+      }
+    }
+  }
+  
+  if (msgLower.includes("metrics") || msgLower.includes("kpi") || msgLower.includes("pipeline") || msgLower.includes("statistics") || msgLower.includes("deals")) {
+    const [activeOpportunities, pendingTasks, pipeline] = await Promise.all([
+      db.opportunity.count({ where: { stage: { notIn: ["won", "lost"] } } }),
+      db.task.count({ where: { status: "pending" } }),
+      db.opportunity.aggregate({ _sum: { value: true }, where: { stage: { notIn: ["won", "lost"] } } }),
+    ]);
+    const value = Number(pipeline._sum.value ?? 0);
+    const metrics = { activeOpportunities, pendingTasks, pipelineValue: value };
+    await auditLog({ tenantId, userId, action: "tool.fetch_business_metrics", target: "dashboard", metadata: metrics });
+    return `Why: Fetched pipeline statistics from CRM database.\n\nHere are the live metrics for your workspace:\n- **Active Opportunities**: ${activeOpportunities}\n- **Pending Follow-up Tasks**: ${pendingTasks}\n- **Total Revenue Pipeline**: $${value.toLocaleString()}`;
+  }
+  
+  const context = await businessContext(tenantId);
+  return `Why: Checked current workspace status for "${context.businessName}".\n\nHello! I am your DAREXai business assistant. I have access to your CRM database (${context.contacts.length} contacts, ${context.opportunities.length} opportunities, ${context.tasks.length} pending tasks). Try asking me to:\n- *Search contact Rahul*\n- *Send a WhatsApp message to Aarav: "Hello from DAREXai!"*\n- *Create a follow-up reminder for Rahul*\n- *Fetch pipeline business metrics*`;
 }
