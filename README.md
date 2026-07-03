@@ -12,6 +12,34 @@ This is a multi-tenant business operations platform featuring a CRM, AI Agent, U
 
 ---
 
+## 🏗️ Architecture Explanation
+
+The Darex AI Operations Platform is engineered with a modular, highly secure, and explainable AI architecture. For a comprehensive walkthrough, please refer to the detailed [PROJECT_DOCUMENTATION.md](file:///c:/PROJECTS/DAREXai_INTERN/PROJECT_DOCUMENTATION.md).
+
+```mermaid
+graph TD
+    Client[Client App / Side Console] <-->|Server-Sent Events| APIRoute[Agent API Route]
+    APIRoute <-->|Prompt & Session History| LLM[Google Gemini LLM]
+    APIRoute <-->|Execute Tools| LocalTools[runAgentTool Orchestrator]
+    LocalTools <-->|Scoped Queries| DB[(PostgreSQL Database)]
+```
+
+### 1. Secure Database Multi-Tenancy Scoping
+To guarantee absolute data boundaries between customers without manual where-clause checks in every route, we implement a centralized Prisma query extension hook in [prisma.ts](file:///c:/PROJECTS/DAREXai_INTERN/src/lib/prisma.ts):
+- It intercepts database queries at runtime and appends `where: { tenantId }` to every select query.
+- It dynamically injects the active tenant ID into all write operations, ensuring no tenant can access or overwrite another tenant's records.
+
+### 2. Dual-Layer Route Protection
+- Protected client-side pages and API routes are gated server-side in [middleware.ts](file:///c:/PROJECTS/DAREXai_INTERN/middleware.ts).
+- Requests lacking a valid session token are redirected instantly at the edge, preventing protected data compilation or server-side rendering leaks.
+
+### 3. Explainable AI Tool Orchestration
+- Outbound responses use Gemini native function-calling. When a user asks the agent to perform a business task, the server runs the function locally, logs the operations to `AuditLog`, and pipes the results back to Gemini.
+- Reasoning explainability is guaranteed by instructing the model to prefix recommendations with a `"Why: [reasoning]"` block.
+- A local keyword heuristic router provides a fail-safe fallback in case of rate-limiting, ensuring system metrics and contact updates remain fully operable.
+
+---
+
 ## Key Features & Security Model
 
 ### 1. Authentication & Multi-Tenancy
